@@ -1,0 +1,213 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Cms.Core.Security
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IMemberManager MemberManager
+@{
+    Layout = null;
+
+    // -- SEO composition (chapter 2 / "reusable SEO composition") --
+    string pageTitle = Model.HasValue("pageTitle") ? Model.Value<string>("pageTitle")! : Model.Name;
+    string titleAppend = Model.Value<string>("titleAppend", fallback: Fallback.ToAncestors) ?? "";
+    string metaDescription = Model.Value<string>("metaDescription") ?? "";
+    string metaKeywords = Model.Value<string>("metaKeywords") ?? "";
+
+    // -- language switcher: query string wins and is remembered in a cookie, default German --
+    string? queryLang = Context.Request.Query["lang"].FirstOrDefault();
+    string cookieLang = Context.Request.Cookies["bv_lang"] ?? "de";
+    string lang = queryLang ?? cookieLang;
+    if (lang != "de" && lang != "en" && lang != "ar") lang = "de";
+    if (queryLang != null && queryLang != cookieLang)
+    {
+        Context.Response.Cookies.Append("bv_lang", lang, new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1) });
+    }
+    string culture = lang switch { "en" => "en-US", "ar" => "ar-SA", _ => "de-DE" };
+    bool isRtl = lang == "ar";
+    string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+
+    IEnumerable<IPublishedContent> latestNews = Model.Root()
+        .Descendants("newsItem")
+        .OrderByDescending(n => n.CreateDate)
+        .Take(2);
+}
+<!--A Design by W3layouts
+Author: W3layout
+Author URL: http://w3layouts.com
+License: Creative Commons Attribution 3.0 Unported
+License URL: http://creativecommons.org/licenses/by/3.0/
+-->
+<!DOCTYPE HTML>
+<html lang="@lang" dir="@(isRtl ? "rtl" : "ltr")">
+<head>
+    <title>@pageTitle@(string.IsNullOrEmpty(titleAppend) ? "" : " - " + titleAppend)</title>
+    <meta name="description" content="@metaDescription" />
+    <meta name="keywords" content="@metaKeywords" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel='stylesheet' type='text/css' />
+    <link href="/css/bootstrap.css" rel='stylesheet' type='text/css' />
+    <link href="/css/blue.css" rel="stylesheet" type="text/css" media="all" />
+    <link rel="stylesheet" href="/fonts/css/font-awesome.min.css">
+    <!-- slider -->
+    <link rel="stylesheet" href="/css/fwslider.css" media="all">
+    <!-- carousel -->
+    <link href="/css/allinone_carousel.css" rel="stylesheet" type="text/css">
+    <link href="/css/owl.carousel.css" rel="stylesheet">
+    <!-- gallery filtering / lightbox -->
+    <link rel="stylesheet" type="text/css" href="/css/jquery.fancybox.css" media="screen" />
+    <link href="~/css/bellavista.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div class="header_bg">
+        <div class="container">
+            <div class="header">
+                <div class="logo">
+                    <a href="/"><img src="/images/logo.png" alt="Bella Vista" /></a>
+                </div>
+                <div class="h_menu">
+                    <a id="touch-menu" class="mobile-menu" href="#">Menu</a>
+                    @await Html.PartialAsync("Navigation", Model, new ViewDataDictionary(ViewData) { { "culture", culture } })
+                    <ul class="lang-switch list-unstyled">
+                        <li class="lang-label">@Dict("Language.Label"):</li>
+                        <li class="@(lang == "de" ? "active" : "")"><a href="?lang=de">DE</a></li>
+                        <li class="@(lang == "en" ? "active" : "")"><a href="?lang=en">EN</a></li>
+                        <li class="@(lang == "ar" ? "active" : "")"><a href="?lang=ar">AR</a></li>
+                    </ul>
+                    @await Html.PartialAsync("Members/LoginStatus", Model, new ViewDataDictionary(ViewData) { { "culture", culture } })
+                    <script src="/js/menu.js" type="text/javascript"></script>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.ContentType.Alias == "home" && Model.HasValue("slider"))
+    {
+        var slides = Model.Value<IEnumerable<IPublishedElement>>("slider");
+        <div id="fwslider">
+            <div class="slider_container">
+                @foreach (IPublishedElement slide in slides)
+                {
+                    var slideImage = slide.Value<MediaWithCrops>("bgImage");
+                    <div class="slide">
+                        @if (slideImage != null)
+                        {
+                            <img src="@slideImage.Content.Url()" alt="@(slide.Value<string>("title"))" />
+                        }
+                        <div class="slide_content">
+                            <div class="slide_content_wrap">
+                                <h4 class="title">@(slide.Value<string>("title"))</h4>
+                                <p class="description">@(slide.Value<string>("subTitle"))</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="timers"></div>
+            <div class="slidePrev"><span></span></div>
+            <div class="slideNext"><span></span></div>
+        </div>
+    }
+
+    @RenderBody()
+
+    <div class="footer_bg">
+        <div class="container">
+            <div class="footer">
+                <div class="col-md-4 footer1_of_3">
+                    <div class="f_logo">
+                        <a href="/"><img src="/images/logo.png" alt="Bella Vista" /></a>
+                    </div>
+                    <p class="f_para">Bella Vista is a family-run Italian restaurant serving fresh, homemade pasta, wood-fired pizza and seasonal specials.</p>
+                    <p>Phone:&nbsp;<span>(0681) 555 0142</span></p>
+                    <span>Email:&nbsp;<a href="mailto:info@bellavista.example">info@bellavista.example</a></span>
+                </div>
+                <div class="col-md-2 footer1_of_3">
+                    <h4>@Dict("Nav.Menu")</h4>
+                    <ul class="list-unstyled f_list">
+                        <li><a href="/menu">@Dict("Nav.Menu")</a></li>
+                        <li><a href="/gallery">@Dict("Nav.Gallery")</a></li>
+                        <li><a href="/contact">@Dict("Nav.Contact")</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 footer1_of_3">
+                    <h4>@Dict("Nav.About")</h4>
+                    <ul class="list-unstyled f_list">
+                        <li><a href="/about-us">@Dict("Nav.About")</a></li>
+                        <li><a href="/news">@Dict("Nav.News")</a></li>
+                        <li><a href="/loyal-guests">@Dict("Nav.LoyalGuests")</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 footer_of_3">
+                    <h4>from the <span>@Dict("Nav.News")</span></h4>
+                    @foreach (IPublishedContent newsItem in latestNews)
+                    {
+                        var thumb = newsItem.Value<MediaWithCrops>("thumbnail");
+                        <div class="blog_list">
+                            <div class="col-md-3 f_pic">
+                                <a href="@newsItem.Url()">
+                                    @if (thumb != null)
+                                    {
+                                        <img src="@thumb.Content.Url()" alt="" class="img-responsive" />
+                                    }
+                                </a>
+                            </div>
+                            <div class="col-md-9 f_text">
+                                <a href="@newsItem.Url()"><p>@(newsItem.Value<string>("teaser"))</p></a>
+                                <span>@newsItem.CreateDate.ToString("d MMMM yyyy")</span>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                    }
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+    <div class="footer1_bg">
+        <div class="container">
+            <div class="footer1">
+                <div class="copy pull-left">
+                    <p class="link"><span>&#169; @DateTime.Now.Year Bella Vista - @Dict("Footer.Rights")</span></p>
+                </div>
+                <div class="soc_icons pull-right">
+                    <ul class="list-unstyled text-center">
+                        <li><a href="#"><i class="fa fa-twitter"></i></a></li>
+                        <li><a href="#"><i class="fa fa-facebook"></i></a></li>
+                        <li><a href="#"><i class="fa fa-google-plus"></i></a></li>
+                        <li><a href="#"><i class="fa fa-rss"></i></a></li>
+                    </ul>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- start plugins (kept at the bottom so the DOM above is ready first) -->
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/bootstrap.js"></script>
+    <script type="text/javascript" src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/css3-mediaqueries.js"></script>
+    <script src="/js/fwslider.js"></script>
+    <script src="/js/jquery-ui-1.8.16.custom.min.js" type="text/javascript"></script>
+    <script src="/js/jquery.ui.touch-punch.min.js" type="text/javascript"></script>
+    <script src="/js/allinone_carousel.js" type="text/javascript"></script>
+    <script src="/js/owl.carousel.js"></script>
+    <script src="/js/jquery.easing.min.js"></script>
+    <script src="/js/jquery.mixitup.min.js"></script>
+    <script src="/js/jquery.fancybox-1.2.1.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#owl-demo").owlCarousel({
+                items: 4, lazyLoad: true, autoPlay: true, navigation: true,
+                navigationText: ["", ""], rewindNav: false, scrollPerPage: false,
+                pagination: false, paginationNumbers: false
+            });
+            $("div.fancyDemo a").fancybox();
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
