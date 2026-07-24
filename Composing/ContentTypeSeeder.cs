@@ -27,10 +27,23 @@ public class ContentTypeSeeder
         new(_shortStringHelper, dataType, alias) { Name = name };
 
     /// <summary>
+    /// A single property that varies by culture (chapter 7, slide 71: "Culture Variance" on
+    /// a property, not just the content type). Requires the owning content type's own
+    /// Variations to include Culture too - see AddTranslatable below for the one place this
+    /// isn't possible.
+    /// </summary>
+    private PropertyType PropV(string alias, string name, IDataType dataType) =>
+        new(_shortStringHelper, dataType, alias) { Name = name, Variations = ContentVariation.Culture };
+
+    /// <summary>
     /// Adds a translatable field as three parallel properties (base = German, +En, +Ar),
-    /// picked at render time via LanguageHelper.Pick - see README for why this is used
-    /// instead of Umbraco's native culture variance (it would require per-culture domains
-    /// and would change every page's URL segment, which the rest of the site depends on).
+    /// picked at render time via LanguageHelper.Pick. This is ONLY used for properties on the
+    /// four element types rendered inside a Block List / Block Grid / Nested Content property
+    /// (SlideItem, GalleryImage, MenuSection, Dish): Umbraco 13's block/nested-content storage
+    /// model (BlockValue/BlockItemData) has no per-culture dimension at all, so native
+    /// ContentVariation.Culture is not achievable there - verified directly against the
+    /// Umbraco.Infrastructure 13.16.0 assembly, not assumed. Every other translatable field in
+    /// this project (see PropV above) uses real Umbraco culture variance instead - see README.
     /// </summary>
     private void AddTranslatable(IContentType ct, string alias, string name, IDataType dataType, string group)
     {
@@ -68,8 +81,9 @@ public class ContentTypeSeeder
         var textarea = _dataTypeService.GetDataType("Textarea")!;
 
         var ct = NewType(SchemaKeys.SeoComposition, "seoComposition", "SEO Composition", "icon-search", isElement: false);
-        AddTranslatable(ct, "pageTitle", "Page title", textstring, "SEO");
-        AddTranslatable(ct, "metaDescription", "Meta description", textarea, "SEO");
+        ct.Variations = ContentVariation.Culture;
+        ct.AddPropertyType(PropV("pageTitle", "Page title", textstring), "SEO", "SEO");
+        ct.AddPropertyType(PropV("metaDescription", "Meta description", textarea), "SEO", "SEO");
         ct.AddPropertyType(Prop("metaKeywords", "Meta keywords", textstring), "SEO", "SEO");
         Save(ct);
         return ct;
@@ -101,9 +115,10 @@ public class ContentTypeSeeder
 
         var ct = NewType(SchemaKeys.Home, "home", "Home", "icon-home", isElement: false);
         ct.AllowedAsRoot = true;
+        ct.Variations = ContentVariation.Culture;
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        AddTranslatable(ct, "titleAppend", "Title append (site name shown after every page title)", textstring, "Content");
+        ct.AddPropertyType(PropV("titleAppend", "Title append (site name shown after every page title)", textstring), "Content", "Content");
         ct.AddPropertyType(Prop("slider", "Homepage slider", slider), "Content", "Content");
         Save(ct);
         return ct;
@@ -119,10 +134,11 @@ public class ContentTypeSeeder
         var boolean = _dataTypeService.GetDataType("True/false")!;
 
         var ct = NewType(SchemaKeys.ContentPage, "contentPage", "Content Page", "icon-document", isElement: false);
+        ct.Variations = ContentVariation.Culture;
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
-        AddTranslatable(ct, "bodyText", "Body text", richtext, "Content");
+        ct.AddPropertyType(PropV("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
+        ct.AddPropertyType(PropV("bodyText", "Body text", richtext), "Content", "Content");
         ct.AddPropertyType(Prop("showContactForm", "Show the reservation form + map (Contact page only)", boolean), "Content", "Content");
         Save(ct);
         return ct;
@@ -138,10 +154,11 @@ public class ContentTypeSeeder
         var blockGrid = _dataTypeService.GetDataType("Bella Vista - Menu (Block Grid)")!;
 
         var ct = NewType(SchemaKeys.MenuPage, "menuPage", "Menu Page", "icon-fork-knife", isElement: false);
+        ct.Variations = ContentVariation.Culture;
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
-        AddTranslatable(ct, "intro", "Short intro text", textarea, "Content");
+        ct.AddPropertyType(PropV("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
+        ct.AddPropertyType(PropV("intro", "Short intro text", textarea), "Content", "Content");
         ct.AddPropertyType(Prop("dishes", "Menu (sections + dishes)", blockGrid), "Content", "Content");
         Save(ct);
         return ct;
@@ -156,9 +173,10 @@ public class ContentTypeSeeder
         var blockList = _dataTypeService.GetDataType("Bella Vista - Gallery (Block List)")!;
 
         var ct = NewType(SchemaKeys.GalleryPage, "galleryPage", "Gallery Page", "icon-picture", isElement: false);
+        ct.Variations = ContentVariation.Culture;
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
+        ct.AddPropertyType(PropV("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
         ct.AddPropertyType(Prop("images", "Gallery photos", blockList), "Content", "Content");
         Save(ct);
         return ct;
@@ -173,10 +191,11 @@ public class ContentTypeSeeder
         var textarea = _dataTypeService.GetDataType("Textarea")!;
 
         var ct = NewType(SchemaKeys.NewsPage, "newsPage", "News Page", "icon-newspaper", isElement: false);
+        ct.Variations = ContentVariation.Culture;
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
-        AddTranslatable(ct, "intro", "Short intro text", textarea, "Content");
+        ct.AddPropertyType(PropV("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
+        ct.AddPropertyType(PropV("intro", "Short intro text", textarea), "Content", "Content");
         Save(ct);
         return ct;
     }
@@ -191,10 +210,11 @@ public class ContentTypeSeeder
         var image = _dataTypeService.GetDataType("Bella Vista - Single Image")!;
 
         var ct = NewType(SchemaKeys.NewsItem, "newsItem", "News Item", "icon-news", isElement: false);
+        ct.Variations = ContentVariation.Culture;
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        AddTranslatable(ct, "teaser", "Teaser (shown in the news list)", textarea, "Content");
-        AddTranslatable(ct, "bodyText", "Body text", richtext, "Content");
+        ct.AddPropertyType(PropV("teaser", "Teaser (shown in the news list)", textarea), "Content", "Content");
+        ct.AddPropertyType(PropV("bodyText", "Body text", richtext), "Content", "Content");
         ct.AddPropertyType(Prop("thumbnail", "Thumbnail image", image), "Content", "Content");
         Save(ct);
         return ct;

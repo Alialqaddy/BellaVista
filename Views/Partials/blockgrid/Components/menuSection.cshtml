@@ -1,9 +1,11 @@
 @using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockGridItem>
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     var content = Model.Content;
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     string sectionTitle = LanguageHelper.Pick(lang, content.Value<string>("sectionTitle"), content.Value<string>("sectionTitleEn"), content.Value<string>("sectionTitleAr"));
 }
 <div class="menu-section">

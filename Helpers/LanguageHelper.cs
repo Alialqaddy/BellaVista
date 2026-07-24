@@ -1,24 +1,24 @@
 using System.Globalization;
-using Microsoft.AspNetCore.Http;
+using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace BellaVista.Helpers;
 
 /// <summary>
-/// Resolves the current site language (DE/EN/AR) from the "?lang=" query string, falling
-/// back to the "bv_lang" cookie, then to German. Every view calls this the same way so the
-/// language switcher (Übung 7.1/7.2: plain text links + Umbraco.GetDictionaryValue) behaves
-/// consistently, whether or not that view is rendered as part of Master's Layout.
+/// Resolves the current site language (DE/EN/AR) from Umbraco's ambient VariationContext -
+/// which the domain-based routing set up in ContentSeeder.SeedDomains (chapter 7, slide 72:
+/// path-suffix domains /de/, /en/, /ar/) already populates per request. This keeps the four
+/// Block/NestedContent fields that still use parallel "xxxEn"/"xxxAr" properties (see
+/// ContentTypeSeeder.AddTranslatable) in sync with the same culture Umbraco resolves natively
+/// for every other property on the page.
 /// </summary>
 public static class LanguageHelper
 {
     public const string DefaultLangCode = "de";
 
-    /// <summary>Read-only: does not set the cookie. Master.cshtml is the only place that does that.</summary>
-    public static string ResolveLangCode(HttpContext context)
+    public static string ResolveLangCode(IVariationContextAccessor variationContextAccessor)
     {
-        string? queryLang = context.Request.Query["lang"].FirstOrDefault();
-        string cookieLang = context.Request.Cookies["bv_lang"] ?? DefaultLangCode;
-        string lang = queryLang ?? cookieLang;
+        string? isoCode = variationContextAccessor.VariationContext?.Culture;
+        string lang = isoCode?.Split('-')[0] ?? DefaultLangCode;
         return lang is "de" or "en" or "ar" ? lang : DefaultLangCode;
     }
 

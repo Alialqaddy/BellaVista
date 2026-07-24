@@ -2,22 +2,23 @@
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     Layout = "Master.cshtml";
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     var thumb = Model.Value<MediaWithCrops>("thumbnail");
-    string bodyText = LanguageHelper.Pick(lang, Model.Value<string>("bodyText"), Model.Value<string>("bodyTextEn"), Model.Value<string>("bodyTextAr"));
+    string bodyText = Model.Value<string>("bodyText") ?? "";
 }
 <div class="main_bg">
     <div class="container">
         <div class="main_grid1">
-            <h3 class="style pull-left" dir="ltr">@Model.Name</h3>
+            <h3 class="style pull-left">@Model.Name</h3>
             <ol class="breadcrumb pull-right">
-                <li><a href="/">@Dict("Nav.Home")</a></li>
+                <li><a href="@Model.Root().Url()">@Dict("Nav.Home")</a></li>
                 <li><a href="@Model.Parent!.Url()">@Dict("Nav.News")</a></li>
-                <li class="active" dir="ltr">@Model.Name</li>
+                <li class="active">@Model.Name</li>
             </ol>
             <div class="clearfix"></div>
         </div>
@@ -26,7 +27,7 @@
 <div class="main_btm1">
     <div class="container">
         <div class="details">
-            <h2 dir="ltr">@Model.Name</h2>
+            <h2>@Model.Name</h2>
             <span class="news-date">@Model.CreateDate.ToString("d MMMM yyyy")</span>
             @if (thumb != null)
             {

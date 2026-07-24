@@ -1,18 +1,20 @@
-﻿@using BellaVista.Helpers
+﻿@using Umbraco.Cms.Core.Models.PublishedContent
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     Layout = "Master.cshtml";
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
-    string heroHeading = LanguageHelper.Pick(lang, Model.Value<string>("heroHeading"), Model.Value<string>("heroHeadingEn"), Model.Value<string>("heroHeadingAr")) is { Length: > 0 } h ? h : Dict("Nav.Gallery");
+    string heroHeading = Model.Value<string>("heroHeading") is { Length: > 0 } h ? h : Dict("Nav.Gallery");
 }
 <div class="main_bg">
     <div class="container">
         <div class="main_grid1">
             <h3 class="style pull-left">@heroHeading</h3>
             <ol class="breadcrumb pull-right">
-                <li><a href="/">@Dict("Nav.Home")</a></li>
+                <li><a href="@Model.Root().Url()">@Dict("Nav.Home")</a></li>
                 <li class="active">@heroHeading</li>
             </ol>
             <div class="clearfix"></div>

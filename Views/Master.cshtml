@@ -3,38 +3,34 @@
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Cms.Core.Security
+@using BellaVista.Composing
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject IMemberManager MemberManager
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     Layout = null;
 
-    // -- language switcher (Übung 7.1/7.2): plain text links in the main nav, remembered in a
-    // cookie so it sticks across pages, read consistently everywhere via LanguageHelper --
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    // -- language switcher (Übung 7.1/7.2): plain text links in the main nav, pointing at the
+    // real per-culture URLs (chapter 7, slide 72: /de/, /en/, /ar/ path-suffix domains) --
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
 
-    // -- SEO composition (chapter 2 / "reusable SEO composition") - fully translated (DE/EN/AR) --
-    string pageTitle = LanguageHelper.Pick(lang,
-        Model.HasValue("pageTitle") ? Model.Value<string>("pageTitle") : Model.Name,
-        Model.Value<string>("pageTitleEn"), Model.Value<string>("pageTitleAr"));
-    string titleAppend = LanguageHelper.Pick(lang,
-        Model.Value<string>("titleAppend", fallback: Fallback.ToAncestors),
-        Model.Value<string>("titleAppendEn", fallback: Fallback.ToAncestors),
-        Model.Value<string>("titleAppendAr", fallback: Fallback.ToAncestors));
-    string metaDescription = LanguageHelper.Pick(lang, Model.Value<string>("metaDescription"), Model.Value<string>("metaDescriptionEn"), Model.Value<string>("metaDescriptionAr"));
+    // -- SEO composition (chapter 2 / "reusable SEO composition") - real Umbraco culture
+    // variance (chapter 7, slide 71), so Model.Value already resolves to the current culture --
+    string pageTitle = Model.HasValue("pageTitle") ? Model.Value<string>("pageTitle")! : Model.Name;
+    string titleAppend = Model.Value<string>("titleAppend", fallback: Fallback.ToAncestors) ?? "";
+    string metaDescription = Model.Value<string>("metaDescription") ?? "";
     string metaKeywords = Model.Value<string>("metaKeywords") ?? "";
-    string? queryLang = Context.Request.Query["lang"].FirstOrDefault();
-    string cookieLang = Context.Request.Cookies["bv_lang"] ?? LanguageHelper.DefaultLangCode;
-    if (queryLang != null && queryLang != cookieLang)
-    {
-        Context.Response.Cookies.Append("bv_lang", lang, new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1) });
-    }
     CultureInfo culture = LanguageHelper.ToCultureInfo(lang);
     bool isRtl = LanguageHelper.IsRtl(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
 
+    // Descendants(alias) (the filtered overload) stopped matching once culture-variant domain
+    // routing was introduced (see Controllers/Api/SpecialsController.cs for the same fix) - this
+    // walks all descendants and filters by content type explicitly instead.
     IEnumerable<IPublishedContent> latestNews = Model.Root()
-        .Descendants("newsItem")
+        .Descendants()
+        .Where(n => n.ContentType.Alias == "newsItem")
         .OrderByDescending(n => n.CreateDate)
         .Take(2);
 }
@@ -70,16 +66,16 @@ License URL: http://creativecommons.org/licenses/by/3.0/
         <div class="container">
             <div class="header">
                 <div class="logo">
-                    <a href="/"><img src="/images/logo.png" alt="Bella Vista" /></a>
+                    <a href="@Model.Root().Url()"><img src="/images/logo.png" alt="Bella Vista" /></a>
                 </div>
                 <div class="h_menu">
                     <a id="touch-menu" class="mobile-menu" href="#">@Dict("Nav.MobileMenuToggle")</a>
                     @await Html.PartialAsync("Navigation", Model)
                     <ul class="lang-switch list-unstyled">
                         <li class="lang-label">@Dict("Language.Label"):</li>
-                        <li class="@(lang == "de" ? "active" : "")"><a href="?lang=de">DE</a></li>
-                        <li class="@(lang == "en" ? "active" : "")"><a href="?lang=en">EN</a></li>
-                        <li class="@(lang == "ar" ? "active" : "")"><a href="?lang=ar">AR</a></li>
+                        <li class="@(lang == "de" ? "active" : "")"><a href="@Model.Url(culture: LanguageAndDictionarySeeder.German)">DE</a></li>
+                        <li class="@(lang == "en" ? "active" : "")"><a href="@Model.Url(culture: LanguageAndDictionarySeeder.English)">EN</a></li>
+                        <li class="@(lang == "ar" ? "active" : "")"><a href="@Model.Url(culture: LanguageAndDictionarySeeder.Arabic)">AR</a></li>
                     </ul>
                     @await Html.PartialAsync("Members/LoginStatus", Model)
                     <script src="/js/menu.js" type="text/javascript"></script>
@@ -126,7 +122,7 @@ License URL: http://creativecommons.org/licenses/by/3.0/
             <div class="footer">
                 <div class="col-md-4 footer1_of_3">
                     <div class="f_logo">
-                        <a href="/"><img src="/images/logo.png" alt="Bella Vista" /></a>
+                        <a href="@Model.Root().Url()"><img src="/images/logo.png" alt="Bella Vista" /></a>
                     </div>
                     <p class="f_para">@LanguageHelper.Pick(lang,
                         "Bella Vista ist ein familiengeführtes italienisches Restaurant mit frischer, hausgemachter Pasta, Pizza aus dem Holzofen und saisonalen Spezialitäten.",
@@ -138,17 +134,17 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                 <div class="col-md-2 footer1_of_3">
                     <h4>@Dict("Nav.Menu")</h4>
                     <ul class="list-unstyled f_list">
-                        <li><a href="/menu">@Dict("Nav.Menu")</a></li>
-                        <li><a href="/gallery">@Dict("Nav.Gallery")</a></li>
-                        <li><a href="/contact">@Dict("Nav.Contact")</a></li>
+                        <li><a href="@Umbraco.Content(ContentKeys.Menu)?.Url()">@Dict("Nav.Menu")</a></li>
+                        <li><a href="@Umbraco.Content(ContentKeys.Gallery)?.Url()">@Dict("Nav.Gallery")</a></li>
+                        <li><a href="@Umbraco.Content(ContentKeys.Contact)?.Url()">@Dict("Nav.Contact")</a></li>
                     </ul>
                 </div>
                 <div class="col-md-2 footer1_of_3">
                     <h4>@Dict("Nav.About")</h4>
                     <ul class="list-unstyled f_list">
-                        <li><a href="/about-us">@Dict("Nav.About")</a></li>
-                        <li><a href="/news">@Dict("Nav.News")</a></li>
-                        <li><a href="/loyal-guests">@Dict("Nav.LoyalGuests")</a></li>
+                        <li><a href="@Umbraco.Content(ContentKeys.About)?.Url()">@Dict("Nav.About")</a></li>
+                        <li><a href="@Umbraco.Content(ContentKeys.News)?.Url()">@Dict("Nav.News")</a></li>
+                        <li><a href="@Umbraco.Content(ContentKeys.LoyalGuests)?.Url()">@Dict("Nav.LoyalGuests")</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4 footer_of_3">
@@ -166,7 +162,7 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                                 </a>
                             </div>
                             <div class="col-md-9 f_text">
-                                <a href="@newsItem.Url()"><p>@LanguageHelper.Pick(lang, newsItem.Value<string>("teaser"), newsItem.Value<string>("teaserEn"), newsItem.Value<string>("teaserAr"))</p></a>
+                                <a href="@newsItem.Url()"><p>@(newsItem.Value<string>("teaser"))</p></a>
                                 <span>@newsItem.CreateDate.ToString("d MMMM yyyy")</span>
                             </div>
                             <div class="clearfix"></div>

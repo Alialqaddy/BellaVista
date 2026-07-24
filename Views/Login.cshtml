@@ -1,13 +1,16 @@
 ﻿@using Umbraco.Cms.Core.Security
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using BellaVista.Composing
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject IMemberManager MemberManager
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     Layout = "Master.cshtml";
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
-    string heroHeading = LanguageHelper.Pick(lang, Model.Value<string>("heroHeading"), Model.Value<string>("heroHeadingEn"), Model.Value<string>("heroHeadingAr")) is { Length: > 0 } h ? h : Dict("Login.Title");
+    string heroHeading = Model.Value<string>("heroHeading") is { Length: > 0 } h ? h : Dict("Login.Title");
     bool failed = TempData["LoginFailed"] != null;
 }
 <div class="main_bg">
@@ -15,7 +18,7 @@
         <div class="main_grid1">
             <h3 class="style pull-left">@heroHeading</h3>
             <ol class="breadcrumb pull-right">
-                <li><a href="/">@Dict("Nav.Home")</a></li>
+                <li><a href="@Model.Root().Url()">@Dict("Nav.Home")</a></li>
                 <li class="active">@heroHeading</li>
             </ol>
             <div class="clearfix"></div>
@@ -26,7 +29,7 @@
     <div class="container">
         @if (MemberManager.IsLoggedIn())
         {
-            <p>@Dict("Login.AlreadyLoggedIn") <a href="/loyal-guests">@Dict("Nav.LoyalGuests")</a></p>
+            <p>@Dict("Login.AlreadyLoggedIn") <a href="@Umbraco.Content(ContentKeys.LoyalGuests)?.Url()">@Dict("Nav.LoyalGuests")</a></p>
         }
         else
         {

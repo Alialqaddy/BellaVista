@@ -3,12 +3,13 @@
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockListItem>
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     var content = Model.Content;
     var image = content.Value<MediaWithCrops>("image");
     string category = content.Value<string>("category") ?? "";
     string categorySlug = category.ToLowerInvariant();
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     string caption = LanguageHelper.Pick(lang, content.Value<string>("caption"), content.Value<string>("captionEn"), content.Value<string>("captionAr"));

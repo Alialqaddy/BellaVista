@@ -3,12 +3,13 @@
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockGridItem>
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     var content = Model.Content;
     var image = content.Value<MediaWithCrops>("image");
     int spiceLevel = content.Value<int>("spiceLevel");
     bool isSpecial = content.Value<bool>("isTodaysSpecial");
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     string description = LanguageHelper.Pick(lang, content.Value<string>("description"), content.Value<string>("descriptionEn"), content.Value<string>("descriptionAr"));

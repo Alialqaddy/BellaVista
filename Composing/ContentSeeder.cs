@@ -7,35 +7,80 @@ namespace BellaVista.Composing;
 /// <summary>
 /// Seeds realistic demo content (no Lorem Ipsum) so the site is demo-able right after
 /// the first `dotnet run`, without anyone having to click through the backoffice first.
-/// Every translatable field is seeded in German, English and Arabic (see README on why
-/// this uses parallel "xxxEn"/"xxxAr" properties instead of Umbraco's native culture
-/// variance). Dish names stay Italian in all three languages, as on a real menu.
+/// Every translatable field is seeded in German, English and Arabic. Page-level fields
+/// (SEO, headings, body text, teasers, and the page Name itself) use real Umbraco culture
+/// variance (chapter 7, Übung 7.1/7.2) - see SetV/SetName below. The four fields that live
+/// inside a Block List / Block Grid / Nested Content element (dish description, gallery
+/// caption, menu section title, slide title/subtitle) still use parallel "xxxEn"/"xxxAr"
+/// properties, since Umbraco 13's block/nested-content storage has no per-culture concept
+/// at all - see ContentTypeSeeder.AddTranslatable and the README. Dish names stay Italian
+/// in all three languages, as on a real menu.
 /// </summary>
 public class ContentSeeder
 {
     private readonly IContentService _contentService;
+    private readonly IDomainService _domainService;
+    private readonly ILocalizationService _localizationService;
     private readonly MediaSeeder _media;
     private readonly MemberAndAccessSeeder _memberAndAccess;
     private readonly TemplateSeeder _templates;
 
-    public ContentSeeder(IContentService contentService, MediaSeeder media, MemberAndAccessSeeder memberAndAccess, TemplateSeeder templates)
+    public ContentSeeder(
+        IContentService contentService,
+        IDomainService domainService,
+        ILocalizationService localizationService,
+        MediaSeeder media,
+        MemberAndAccessSeeder memberAndAccess,
+        TemplateSeeder templates)
     {
         _contentService = contentService;
+        _domainService = domainService;
+        _localizationService = localizationService;
         _media = media;
         _memberAndAccess = memberAndAccess;
         _templates = templates;
     }
 
-    private void Publish(IContent content) => _contentService.SaveAndPublish(content, userId: Constants.Security.SuperUserId);
+    /// <summary>Publishes every culture at once ("*" = all cultures with pending edits) - fine for both variant and invariant content types.</summary>
+    private void Publish(IContent content) => _contentService.SaveAndPublish(content, "*", Constants.Security.SuperUserId);
 
     private static string Placeholder(string name) => $"placeholders/{name}.jpg";
 
-    /// <summary>Sets a base (German) property plus its English/Arabic parallel properties.</summary>
-    private static void SetT(IContent content, string alias, string de, string en, string ar)
+    /// <summary>Sets a real Umbraco culture-variant property (chapter 7, slide 71) in all three languages.</summary>
+    private static void SetV(IContent content, string alias, string de, string en, string ar)
     {
-        content.SetValue(alias, de);
-        content.SetValue(alias + "En", en);
-        content.SetValue(alias + "Ar", ar);
+        content.SetValue(alias, de, LanguageAndDictionarySeeder.German);
+        content.SetValue(alias, en, LanguageAndDictionarySeeder.English);
+        content.SetValue(alias, ar, LanguageAndDictionarySeeder.Arabic);
+    }
+
+    /// <summary>Sets the content item's Name in all three languages - mandatory once its Document Type varies by culture.</summary>
+    private static void SetName(IContent content, string de, string en, string ar)
+    {
+        content.SetCultureName(de, LanguageAndDictionarySeeder.German);
+        content.SetCultureName(en, LanguageAndDictionarySeeder.English);
+        content.SetCultureName(ar, LanguageAndDictionarySeeder.Arabic);
+    }
+
+    /// <summary>
+    /// Registers a path-suffix domain per language against the site root (chapter 7, slide 72:
+    /// "kann z.B. auch nur ein Pfad-Suffix sein... gut geeignet fuer localhost"), so /de/, /en/
+    /// and /ar/ each resolve to Home in that culture instead of a `?lang=` query string.
+    /// </summary>
+    private void SeedDomains(IContent home)
+    {
+        if (_domainService.GetAssignedDomains(home.Id, includeWildcards: false).Any()) return;
+
+        void AddDomain(string path, string isoCode)
+        {
+            ILanguage language = _localizationService.GetLanguageByIsoCode(isoCode)!;
+            var domain = new UmbracoDomain(path, isoCode) { RootContentId = home.Id, LanguageId = language.Id };
+            _domainService.Save(domain);
+        }
+
+        AddDomain("/de/", LanguageAndDictionarySeeder.German);
+        AddDomain("/en/", LanguageAndDictionarySeeder.English);
+        AddDomain("/ar/", LanguageAndDictionarySeeder.Arabic);
     }
 
     public async Task SeedAllAsync()
@@ -43,6 +88,7 @@ public class ContentSeeder
         if (_contentService.GetRootContent().Any()) return; // already seeded
 
         IContent home = CreateHome();
+        SeedDomains(home);
         IContent about = CreateAbout(home);
         IContent menu = CreateMenu(home);
         IContent gallery = CreateGallery(home);
@@ -59,13 +105,15 @@ public class ContentSeeder
     private IContent CreateHome()
     {
         IContent home = _contentService.Create("Bella Vista", -1, "home");
-        SetT(home, "pageTitle", "Bella Vista - Ristorante Italiano", "Bella Vista - Italian Restaurant", "بيلا فيستا - مطعم إيطالي");
-        SetT(home, "metaDescription",
+        home.Key = ContentKeys.Home;
+        SetName(home, "Bella Vista", "Bella Vista", "بيلا فيستا");
+        SetV(home, "pageTitle", "Bella Vista - Ristorante Italiano", "Bella Vista - Italian Restaurant", "بيلا فيستا - مطعم إيطالي");
+        SetV(home, "metaDescription",
             "Bella Vista ist ein familiengeführtes italienisches Restaurant mit frischer, hausgemachter Pasta, Pizza aus dem Holzofen und saisonalen Spezialitäten.",
             "Bella Vista is a family-run Italian restaurant serving fresh, homemade pasta, wood-fired pizza and seasonal specials.",
             "بيلا فيستا مطعم إيطالي عائلي يقدم المعكرونة الطازجة محلية الصنع والبيتزا من الفرن الخشبي وأطباق موسمية مميزة.");
         home.SetValue("metaKeywords", "italienisches restaurant, pizza, pasta, bella vista");
-        SetT(home, "titleAppend", "Bella Vista Ristorante", "Bella Vista Ristorante", "بيلا فيستا ريستورانتي");
+        SetV(home, "titleAppend", "Bella Vista Ristorante", "Bella Vista Ristorante", "بيلا فيستا ريستورانتي");
 
         string slider = BlockValueBuilder.BuildSlider(new[]
         {
@@ -91,14 +139,16 @@ public class ContentSeeder
     private IContent CreateAbout(IContent home)
     {
         IContent about = _contentService.Create("About Us", home, "contentPage");
-        SetT(about, "pageTitle", "Über uns", "About Us", "من نحن");
-        SetT(about, "metaDescription",
+        about.Key = ContentKeys.About;
+        SetName(about, "Über uns", "About Us", "من نحن");
+        SetV(about, "pageTitle", "Über uns", "About Us", "من نحن");
+        SetV(about, "metaDescription",
             "Die Geschichte hinter Bella Vista, unser Küchenteam und warum unsere Gäste immer wiederkommen.",
             "The story behind Bella Vista, our kitchen team and why guests keep coming back.",
             "قصة بيلا فيستا وفريق مطبخنا ولماذا يعود ضيوفنا دائماً.");
         about.SetValue("metaKeywords", "über uns, italienisches restaurant, köche");
-        SetT(about, "heroHeading", "Über uns", "About Us", "من نحن");
-        SetT(about, "bodyText",
+        SetV(about, "heroHeading", "Über uns", "About Us", "من نحن");
+        SetV(about, "bodyText",
             """
             <h3>Unsere Geschichte</h3>
             <p>Bella Vista hat 2014 eröffnet, gegründet von der Familie Moretti mit einer einfachen Idee:
@@ -158,14 +208,16 @@ public class ContentSeeder
     private IContent CreateMenu(IContent home)
     {
         IContent menu = _contentService.Create("Menu", home, "menuPage");
-        SetT(menu, "pageTitle", "Speisekarte", "Menu", "قائمة الطعام");
-        SetT(menu, "metaDescription",
+        menu.Key = ContentKeys.Menu;
+        SetName(menu, "Speisekarte", "Menu", "قائمة الطعام");
+        SetV(menu, "pageTitle", "Speisekarte", "Menu", "قائمة الطعام");
+        SetV(menu, "metaDescription",
             "Vorspeisen, Hauptgerichte, Desserts und Getränke bei Bella Vista - frische Pasta, Pizza aus dem Holzofen und hausgemachtes Tiramisù.",
             "Starters, mains, desserts and drinks at Bella Vista - fresh pasta, wood-fired pizza and homemade tiramisu.",
             "مقبلات وأطباق رئيسية وحلويات ومشروبات في بيلا فيستا - معكرونة طازجة وبيتزا من الفرن الخشبي وتيراميسو منزلي.");
         menu.SetValue("metaKeywords", "speisekarte, pasta, pizza, dessert");
-        SetT(menu, "heroHeading", "Unsere Speisekarte", "Our Menu", "قائمة طعامنا");
-        SetT(menu, "intro",
+        SetV(menu, "heroHeading", "Unsere Speisekarte", "Our Menu", "قائمة طعامنا");
+        SetV(menu, "intro",
             "Alles unten wird auf Bestellung in unserer offenen Küche zubereitet. Bitte informieren Sie Ihren Kellner über Allergien.",
             "Everything below is cooked to order in our open kitchen. Let your server know about any allergies.",
             "كل ما يلي يُحضَّر عند الطلب في مطبخنا المفتوح. يرجى إبلاغ النادل بأي حساسية غذائية.");
@@ -254,13 +306,15 @@ public class ContentSeeder
     private IContent CreateGallery(IContent home)
     {
         IContent gallery = _contentService.Create("Gallery", home, "galleryPage");
-        SetT(gallery, "pageTitle", "Galerie", "Gallery", "معرض الصور");
-        SetT(gallery, "metaDescription",
+        gallery.Key = ContentKeys.Gallery;
+        SetName(gallery, "Galerie", "Gallery", "معرض الصور");
+        SetV(gallery, "pageTitle", "Galerie", "Gallery", "معرض الصور");
+        SetV(gallery, "metaDescription",
             "Fotos aus dem Gastraum, der Küche und der Terrasse von Bella Vista.",
             "Photos from the Bella Vista dining room, kitchen and terrace.",
             "صور من صالة الطعام والمطبخ والتراس في بيلا فيستا.");
         gallery.SetValue("metaKeywords", "galerie, fotos, restaurant");
-        SetT(gallery, "heroHeading", "Galerie", "Gallery", "معرض الصور");
+        SetV(gallery, "heroHeading", "Galerie", "Gallery", "معرض الصور");
 
         Guid starterImg = _media.FromThemeImage(Placeholder("gallery-starter"));
         Guid starterImg2 = _media.FromThemeImage(Placeholder("gallery-starter-2"));
@@ -291,14 +345,16 @@ public class ContentSeeder
     private IContent CreateNews(IContent home)
     {
         IContent news = _contentService.Create("News", home, "newsPage");
-        SetT(news, "pageTitle", "Neuigkeiten & Veranstaltungen", "News & Events", "الأخبار والفعاليات");
-        SetT(news, "metaDescription",
+        news.Key = ContentKeys.News;
+        SetName(news, "Neuigkeiten & Veranstaltungen", "News & Events", "الأخبار والفعاليات");
+        SetV(news, "pageTitle", "Neuigkeiten & Veranstaltungen", "News & Events", "الأخبار والفعاليات");
+        SetV(news, "metaDescription",
             "Die neuesten Nachrichten, Veranstaltungen und Aktionen von Bella Vista.",
             "The latest news, events and promotions from Bella Vista.",
             "أحدث الأخبار والفعاليات والعروض من بيلا فيستا.");
         news.SetValue("metaKeywords", "neuigkeiten, veranstaltungen, aktionen");
-        SetT(news, "heroHeading", "Neuigkeiten & Veranstaltungen", "News & Events", "الأخبار والفعاليات");
-        SetT(news, "intro", "Was sich im Restaurant und drumherum tut.", "What's happening in and around the restaurant.", "ما الذي يحدث في المطعم وحوله.");
+        SetV(news, "heroHeading", "Neuigkeiten & Veranstaltungen", "News & Events", "الأخبار والفعاليات");
+        SetV(news, "intro", "Was sich im Restaurant und drumherum tut.", "What's happening in and around the restaurant.", "ما الذي يحدث في المطعم وحوله.");
         Publish(news);
 
         (string TitleDe, string TitleEn, string TitleAr, string TeaserDe, string TeaserEn, string TeaserAr, string BodyDe, string BodyEn, string BodyAr, string Image)[] items =
@@ -348,10 +404,11 @@ public class ContentSeeder
         foreach (var item in items)
         {
             IContent contentItem = _contentService.Create(item.TitleDe, news, "newsItem");
-            SetT(contentItem, "pageTitle", item.TitleDe, item.TitleEn, item.TitleAr);
-            SetT(contentItem, "metaDescription", item.TeaserDe, item.TeaserEn, item.TeaserAr);
-            SetT(contentItem, "teaser", item.TeaserDe, item.TeaserEn, item.TeaserAr);
-            SetT(contentItem, "bodyText", item.BodyDe, item.BodyEn, item.BodyAr);
+            SetName(contentItem, item.TitleDe, item.TitleEn, item.TitleAr);
+            SetV(contentItem, "pageTitle", item.TitleDe, item.TitleEn, item.TitleAr);
+            SetV(contentItem, "metaDescription", item.TeaserDe, item.TeaserEn, item.TeaserAr);
+            SetV(contentItem, "teaser", item.TeaserDe, item.TeaserEn, item.TeaserAr);
+            SetV(contentItem, "bodyText", item.BodyDe, item.BodyEn, item.BodyAr);
             contentItem.SetValue("thumbnail", BlockValueBuilder.MediaPickerJson(_media.FromThemeImage(Placeholder(item.Image))));
             Publish(contentItem);
         }
@@ -362,15 +419,17 @@ public class ContentSeeder
     private IContent CreateContact(IContent home)
     {
         IContent contact = _contentService.Create("Contact", home, "contentPage");
-        SetT(contact, "pageTitle", "Kontakt & Reservierung", "Contact & Reservations", "اتصل بنا واحجز");
-        SetT(contact, "metaDescription",
+        contact.Key = ContentKeys.Contact;
+        SetName(contact, "Kontakt & Reservierung", "Contact & Reservations", "اتصل بنا واحجز");
+        SetV(contact, "pageTitle", "Kontakt & Reservierung", "Contact & Reservations", "اتصل بنا واحجز");
+        SetV(contact, "metaDescription",
             "Finden Sie Bella Vista, nehmen Sie Kontakt auf oder reservieren Sie einen Tisch.",
             "Find Bella Vista, get in touch or request a table reservation.",
             "اعثر على بيلا فيستا، تواصل معنا أو اطلب حجز طاولة.");
         contact.SetValue("metaKeywords", "kontakt, reservierung, adresse");
-        SetT(contact, "heroHeading", "Kontakt & Reservierung", "Contact & Reservations", "اتصل بنا واحجز");
+        SetV(contact, "heroHeading", "Kontakt & Reservierung", "Contact & Reservations", "اتصل بنا واحجز");
         contact.SetValue("showContactForm", true);
-        SetT(contact, "bodyText",
+        SetV(contact, "bodyText",
             """
             <address>
                 <p>Bella Vista Ristorante<br/>Hauptstraße 12, 66111 Saarbrücken</p>
@@ -399,10 +458,12 @@ public class ContentSeeder
     private IContent CreateLoyalGuests(IContent home)
     {
         IContent page = _contentService.Create("Loyal Guests", home, "contentPage");
-        SetT(page, "pageTitle", "Stammgäste", "Loyal Guests", "الضيوف المميزون");
-        SetT(page, "metaDescription", "Sonderangebote für die Stammgäste von Bella Vista.", "Special offers for Bella Vista's loyal guests.", "عروض خاصة لضيوف بيلا فيستا المميزين.");
-        SetT(page, "heroHeading", "Stammgäste - Sonderangebote", "Loyal Guests - Special Offers", "الضيوف المميزون - عروض خاصة");
-        SetT(page, "bodyText",
+        page.Key = ContentKeys.LoyalGuests;
+        SetName(page, "Stammgäste", "Loyal Guests", "الضيوف المميزون");
+        SetV(page, "pageTitle", "Stammgäste", "Loyal Guests", "الضيوف المميزون");
+        SetV(page, "metaDescription", "Sonderangebote für die Stammgäste von Bella Vista.", "Special offers for Bella Vista's loyal guests.", "عروض خاصة لضيوف بيلا فيستا المميزين.");
+        SetV(page, "heroHeading", "Stammgäste - Sonderangebote", "Loyal Guests - Special Offers", "الضيوف المميزون - عروض خاصة");
+        SetV(page, "bodyText",
             """
             <p>Danke, dass Sie regelmäßig bei Bella Vista zu Gast sind. Diesen Monat erhalten Stammgäste:</p>
             <ul>
@@ -437,9 +498,11 @@ public class ContentSeeder
     private IContent CreateLogin(IContent home)
     {
         IContent login = _contentService.Create("Login", home, "contentPage");
-        SetT(login, "pageTitle", "Anmelden", "Log in", "تسجيل الدخول");
-        SetT(login, "metaDescription", "Melden Sie sich bei Ihrem Bella Vista Stammgast-Konto an.", "Log in to your Bella Vista loyal guest account.", "سجّل الدخول إلى حساب الضيف المميز في بيلا فيستا.");
-        SetT(login, "heroHeading", "Anmelden", "Log in", "تسجيل الدخول");
+        login.Key = ContentKeys.Login;
+        SetName(login, "Anmelden", "Log in", "تسجيل الدخول");
+        SetV(login, "pageTitle", "Anmelden", "Log in", "تسجيل الدخول");
+        SetV(login, "metaDescription", "Melden Sie sich bei Ihrem Bella Vista Stammgast-Konto an.", "Log in to your Bella Vista loyal guest account.", "سجّل الدخول إلى حساب الضيف المميز في بيلا فيستا.");
+        SetV(login, "heroHeading", "Anmelden", "Log in", "تسجيل الدخول");
         login.TemplateId = _templates.LoginTemplate.Id;
         Publish(login);
         return login;
@@ -448,10 +511,12 @@ public class ContentSeeder
     private IContent CreateAccessDenied(IContent home)
     {
         IContent page = _contentService.Create("Members Only", home, "contentPage");
-        SetT(page, "pageTitle", "Nur für Mitglieder", "Members Only", "للأعضاء فقط");
-        SetT(page, "metaDescription", "Diese Seite ist nur für angemeldete Stammgäste verfügbar.", "This page is only available to logged-in loyal guests.", "هذه الصفحة متاحة فقط للضيوف المميزين المسجلين.");
-        SetT(page, "heroHeading", "Nur für Mitglieder", "Members Only", "للأعضاء فقط");
-        SetT(page, "bodyText",
+        page.Key = ContentKeys.AccessDenied;
+        SetName(page, "Nur für Mitglieder", "Members Only", "للأعضاء فقط");
+        SetV(page, "pageTitle", "Nur für Mitglieder", "Members Only", "للأعضاء فقط");
+        SetV(page, "metaDescription", "Diese Seite ist nur für angemeldete Stammgäste verfügbar.", "This page is only available to logged-in loyal guests.", "هذه الصفحة متاحة فقط للضيوف المميزين المسجلين.");
+        SetV(page, "heroHeading", "Nur für Mitglieder", "Members Only", "للأعضاء فقط");
+        SetV(page, "bodyText",
             "<p>Diese Seite ist nur für angemeldete Stammgäste verfügbar. Bitte melden Sie sich an, um fortzufahren.</p>",
             "<p>This page is only available to logged-in loyal guests. Please log in to continue.</p>",
             "<p>هذه الصفحة متاحة فقط للضيوف المميزين المسجلين. يرجى تسجيل الدخول للمتابعة.</p>");

@@ -1,5 +1,8 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using BellaVista.Composing
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IVariationContextAccessor VariationContextAccessor
 @*
     Dynamic navigation (chapter 4, Übung 4): a plain Partial View, not a macro - it walks
     the content tree itself and needs no editor-supplied parameters. Respects the built-in
@@ -7,30 +10,32 @@
     Login/Members-only pages since they're not meant to show up as nav items.
 *@
 @{
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     string activate = Model.Root().Id == Model.Id ? "activate" : "";
 
-    var hiddenNames = new[] { "Login", "Members Only" };
+    // Login/Members-only aren't meant to show up as nav items - matched by fixed Key since
+    // Name now varies by culture and can no longer be compared as a literal German string.
+    var hiddenKeys = new[] { ContentKeys.Login, ContentKeys.AccessDenied };
 
     bool ShowInNav(IPublishedContent node) =>
-        !node.Value<bool>("umbracoNaviHide") && !hiddenNames.Contains(node.Name);
+        !node.Value<bool>("umbracoNaviHide") && !hiddenKeys.Contains(node.Key);
 }
 <nav>
     <ul class="menu list-unstyled">
-        <li class="@activate"><a href="/">@Dict("Nav.Home")</a></li>
+        <li class="@activate"><a href="@Model.Root().Url()">@Dict("Nav.Home")</a></li>
         @foreach (var navItem in Model.Root().Children().Where(ShowInNav))
         {
             string itemActive = navItem.Id == Model.Id || Model.Ancestors().Any(a => a.Id == navItem.Id) ? "activate" : "";
-            string label = navItem.ContentType.Alias switch
+            string label = navItem.Key switch
             {
-                "contentPage" when navItem.Name == "About Us" => Dict("Nav.About"),
-                "contentPage" when navItem.Name == "Contact" => Dict("Nav.Contact"),
-                "contentPage" when navItem.Name == "Loyal Guests" => Dict("Nav.LoyalGuests"),
-                "menuPage" => Dict("Nav.Menu"),
-                "galleryPage" => Dict("Nav.Gallery"),
-                "newsPage" => Dict("Nav.News"),
+                var key when key == ContentKeys.About => Dict("Nav.About"),
+                var key when key == ContentKeys.Contact => Dict("Nav.Contact"),
+                var key when key == ContentKeys.LoyalGuests => Dict("Nav.LoyalGuests"),
+                var key when key == ContentKeys.Menu => Dict("Nav.Menu"),
+                var key when key == ContentKeys.Gallery => Dict("Nav.Gallery"),
+                var key when key == ContentKeys.News => Dict("Nav.News"),
                 _ => navItem.Name,
             };
             <li class="@itemActive"><a href="@navItem.Url()">@label</a></li>

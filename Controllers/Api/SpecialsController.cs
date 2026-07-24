@@ -32,21 +32,38 @@ public class SpecialsController : UmbracoApiController
 {
     private readonly IPublishedContentQuery _publishedContentQuery;
     private readonly IPublishedUrlProvider _publishedUrlProvider;
+    private readonly IVariationContextAccessor _variationContextAccessor;
 
-    public SpecialsController(IPublishedContentQuery publishedContentQuery, IPublishedUrlProvider publishedUrlProvider)
+    public SpecialsController(
+        IPublishedContentQuery publishedContentQuery,
+        IPublishedUrlProvider publishedUrlProvider,
+        IVariationContextAccessor variationContextAccessor)
     {
         _publishedContentQuery = publishedContentQuery;
         _publishedUrlProvider = publishedUrlProvider;
+        _variationContextAccessor = variationContextAccessor;
     }
 
     [HttpGet]
-    public IActionResult GetSpecials(int startFrom = 0, int take = 3)
+    public IActionResult GetSpecials(int startFrom = 0, int take = 3, string lang = LanguageHelper.DefaultLangCode)
     {
         List<SpecialDto> all = new();
-        string lang = LanguageHelper.ResolveLangCode(HttpContext);
+        // This route isn't a culture-prefixed content URL, so there's no ambient
+        // VariationContext the way a normal page request gets one from domain routing - the
+        // calling page passes its already-resolved language explicitly instead (see
+        // wwwroot/js/specials.js and the "data-lang" attribute in Views/Home.cshtml), and we
+        // set the VariationContext from it ourselves so Menu/MenuPage (now culture-variant)
+        // resolve as published and Model.Value(...) picks the right culture.
+        lang = lang is "de" or "en" or "ar" ? lang : LanguageHelper.DefaultLangCode;
+        _variationContextAccessor.VariationContext = new VariationContext(LanguageHelper.ToIsoCode(lang));
 
-        IEnumerable<IPublishedContent> menuPages = _publishedContentQuery.ContentAtRoot()
-            .SelectMany(root => root.DescendantsOrSelf("menuPage"));
+        // Descendants(alias) (rather than DescendantsOrSelf(alias)) - with domain-based culture
+        // routing now in play, DescendantsOrSelf(alias) was mis-matching and returning Home
+        // itself instead of filtering by content type, so this walks + filters explicitly.
+        List<IPublishedContent> menuPages = _publishedContentQuery.ContentAtRoot()
+            .SelectMany(root => root.Descendants())
+            .Where(c => c.ContentType.Alias == "menuPage")
+            .ToList();
 
         foreach (IPublishedContent menuPage in menuPages)
         {

@@ -6,6 +6,10 @@ $(function () {
     var $empty = $("#specials-empty");
     var startFrom = 0;
     var take = parseInt($button.data("take"), 10) || 3;
+    // The API route isn't a culture-prefixed content URL, so it can't resolve the current
+    // language from Umbraco's domain routing the way page requests do - the page passes its
+    // own resolved language along as a plain query parameter instead.
+    var lang = $list.data("lang") || "de";
 
     function renderSpecial(item) {
         var image = item.imageUrl
@@ -27,7 +31,7 @@ $(function () {
     }
 
     function loadMore() {
-        $.get("/umbraco/api/specials/getspecials?startFrom=" + startFrom + "&take=" + take, function (data) {
+        $.get("/umbraco/api/specials/getspecials?startFrom=" + startFrom + "&take=" + take + "&lang=" + lang, function (data) {
             data.items.forEach(function (item) {
                 $list.append(renderSpecial(item));
             });

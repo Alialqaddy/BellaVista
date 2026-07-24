@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Logging;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Infrastructure.Persistence;
 using Umbraco.Cms.Web.Common.Security;
 using Umbraco.Cms.Web.Website.Controllers;
+using BellaVista.Composing;
 
 namespace BellaVista.Controllers.Surface;
 
@@ -18,6 +21,7 @@ namespace BellaVista.Controllers.Surface;
 public class MemberSurfaceController : SurfaceController
 {
     private readonly MemberSignInManager _signInManager;
+    private readonly IPublishedContentQuery _publishedContentQuery;
 
     public MemberSurfaceController(
         IUmbracoContextAccessor umbracoContextAccessor,
@@ -26,10 +30,12 @@ public class MemberSurfaceController : SurfaceController
         AppCaches appCaches,
         IProfilingLogger profilingLogger,
         IPublishedUrlProvider publishedUrlProvider,
-        MemberSignInManager signInManager)
+        MemberSignInManager signInManager,
+        IPublishedContentQuery publishedContentQuery)
         : base(umbracoContextAccessor, databaseFactory, services, appCaches, profilingLogger, publishedUrlProvider)
     {
         _signInManager = signInManager;
+        _publishedContentQuery = publishedContentQuery;
     }
 
     [HttpPost]
@@ -51,6 +57,7 @@ public class MemberSurfaceController : SurfaceController
     public async Task<IActionResult> HandleLogout()
     {
         await _signInManager.SignOutAsync();
-        return Redirect("/");
+        string homeUrl = _publishedContentQuery.Content(ContentKeys.Home)?.Url() ?? "/";
+        return Redirect(homeUrl);
     }
 }

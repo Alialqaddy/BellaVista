@@ -1,11 +1,16 @@
-﻿@using BellaVista.Helpers
+﻿@using Umbraco.Cms.Core.Models.PublishedContent
+@using BellaVista.Composing
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IVariationContextAccessor VariationContextAccessor
 @{
     Layout = "Master.cshtml";
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     string P(string de, string en, string ar) => LanguageHelper.Pick(lang, de, en, ar);
+    string menuUrl = Umbraco.Content(ContentKeys.Menu)?.Url() ?? "/";
+    string galleryUrl = Umbraco.Content(ContentKeys.Gallery)?.Url() ?? "/";
 }
 @section Scripts {
     <script src="~/js/specials.js"></script>
@@ -21,7 +26,7 @@
                         "معكرونة طازجة، فرن خشبي، وقائمة طعام تتغير مع الفصول - يُطهى كل ذلك كما اعتاد فريق مطبخنا في بيوتهم.")</p>
                 </div>
                 <div class="col-md-2 span1_of_2">
-                    <a class="btn" href="/menu">@Dict("Home.ViewMenuBtn")</a>
+                    <a class="btn" href="@menuUrl">@Dict("Home.ViewMenuBtn")</a>
                 </div>
                 <div class="clearfix"></div>
             </div>
@@ -74,7 +79,7 @@
             <h4>@Dict("Home.SpecialsHeading")</h4>
             <p>@Dict("Home.SpecialsIntro")</p>
         </div>
-        <div id="specials-list" class="span_of_4"></div>
+        <div id="specials-list" class="span_of_4" data-lang="@lang"></div>
         <div class="specials-loadmore">
             <button id="specials-load-more" class="btn" data-take="3">@Dict("Btn.LoadMore")</button>
             <p id="specials-empty" class="specials-empty" style="display:none;">@Dict("Home.SpecialsEmpty")</p>
@@ -98,11 +103,11 @@
             <div class="col-md-3 span1_of_3">
                 <h4>@P("Warum uns wählen?", "Why Choose Us?", "لماذا تختارنا؟")</h4>
                 <ul class="list-unstyled nav_list">
-                    <li><a href="/menu">@P("Frische Pasta, jeden Morgen im Haus gemacht", "Fresh pasta, made in-house every morning", "معكرونة طازجة تُحضَّر يومياً في المطبخ")</a></li>
-                    <li><a href="/menu">@P("Holzofen, importiert aus Neapel", "Wood-fired oven, imported from Naples", "فرن خشبي مستورد من نابولي")</a></li>
-                    <li><a href="/menu">@P("Saisonale Karte, passend zum Markt", "Seasonal menu, matched to the market", "قائمة موسمية تتماشى مع السوق")</a></li>
-                    <li><a href="/menu">@P("Weinkarte mit kleinen Weingütern", "Wine list from small estates", "قائمة نبيذ من مزارع صغيرة")</a></li>
-                    <li><a href="/gallery">@P("Ein Gastraum und eine Terrasse, die dazu passen", "A dining room and terrace to match", "قاعة طعام وتراس يليقان بذلك")</a></li>
+                    <li><a href="@menuUrl">@P("Frische Pasta, jeden Morgen im Haus gemacht", "Fresh pasta, made in-house every morning", "معكرونة طازجة تُحضَّر يومياً في المطبخ")</a></li>
+                    <li><a href="@menuUrl">@P("Holzofen, importiert aus Neapel", "Wood-fired oven, imported from Naples", "فرن خشبي مستورد من نابولي")</a></li>
+                    <li><a href="@menuUrl">@P("Saisonale Karte, passend zum Markt", "Seasonal menu, matched to the market", "قائمة موسمية تتماشى مع السوق")</a></li>
+                    <li><a href="@menuUrl">@P("Weinkarte mit kleinen Weingütern", "Wine list from small estates", "قائمة نبيذ من مزارع صغيرة")</a></li>
+                    <li><a href="@galleryUrl">@P("Ein Gastraum und eine Terrasse, die dazu passen", "A dining room and terrace to match", "قاعة طعام وتراس يليقان بذلك")</a></li>
                 </ul>
             </div>
             <div class="col-md-6 span1_of_3">

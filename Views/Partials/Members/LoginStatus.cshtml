@@ -1,9 +1,12 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Cms.Core.Security
+@using BellaVista.Composing
 @using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject IMemberManager MemberManager
+@inject IVariationContextAccessor VariationContextAccessor
 @{
-    string lang = LanguageHelper.ResolveLangCode(Context);
+    string lang = LanguageHelper.ResolveLangCode(VariationContextAccessor);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     bool loggedIn = MemberManager.IsLoggedIn();
@@ -20,6 +23,6 @@
     }
     else
     {
-        <a class="login-status-link" href="/login">@Dict("Login.Title")</a>
+        <a class="login-status-link" href="@Umbraco.Content(ContentKeys.Login)?.Url()">@Dict("Login.Title")</a>
     }
 </div>
