@@ -1,14 +1,18 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+﻿@using BellaVista.Helpers
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
-    string heroHeading = Model.Value<string>("heroHeading") ?? "Menu";
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    var culture = LanguageHelper.ToCultureInfo(lang);
+    string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+    string heroHeading = Model.Value<string>("heroHeading") ?? Dict("Nav.Menu");
 }
 <div class="main_bg">
     <div class="container">
         <div class="main_grid1">
             <h3 class="style pull-left">@heroHeading</h3>
             <ol class="breadcrumb pull-right">
-                <li><a href="/">Home</a></li>
+                <li><a href="/">@Dict("Nav.Home")</a></li>
                 <li class="active">@heroHeading</li>
             </ol>
             <div class="clearfix"></div>
@@ -19,9 +23,13 @@
     <div class="container">
         @if (Model.HasValue("intro"))
         {
-            <p class="menu-intro">@(Model.Value<string>("intro"))</p>
+            <p class="menu-intro" dir="ltr">@(Model.Value<string>("intro"))</p>
         }
-        @* Blockgrid rendering exactly as taught: chapter 5, Übung 5.1 *@
+        @* Blockgrid rendering exactly as taught: chapter 5, Übung 5.1.
+           Direction scoping for dish/section text happens inside each block
+           component (dish.cshtml / menuSection.cshtml), not here, since the
+           "today's special" badge and spice-level label in dish.cshtml ARE
+           Dictionary-translated and must keep flowing with the page direction. *@
         @await Html.GetBlockGridHtmlAsync(Model, "dishes")
     </div>
 </div>

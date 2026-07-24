@@ -4,7 +4,9 @@
     var content = Model.Content;
 }
 <div class="menu-section">
-    <h3 class="menu-section-title">@(content.Value<string>("sectionTitle"))</h3>
+    @* dir="ltr": section titles (Vorspeisen/Hauptgerichte/...) are seeded content, not
+       Dictionary-translated chrome - see README on multilingual scope. *@
+    <h3 class="menu-section-title" dir="ltr">@(content.Value<string>("sectionTitle"))</h3>
     <div class="menu-section-dishes">
         @await Html.GetBlockGridItemAreasHtmlAsync(Model)
     </div>

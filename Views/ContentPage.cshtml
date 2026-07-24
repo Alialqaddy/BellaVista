@@ -1,6 +1,10 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+﻿@using BellaVista.Helpers
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    var culture = LanguageHelper.ToCultureInfo(lang);
+    string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     string heroHeading = Model.Value<string>("heroHeading") ?? Model.Name;
     bool showContactForm = Model.Value<bool>("showContactForm");
 }
@@ -9,7 +13,7 @@
         <div class="main_grid1">
             <h3 class="style pull-left">@heroHeading</h3>
             <ol class="breadcrumb pull-right">
-                <li><a href="/">Home</a></li>
+                <li><a href="/">@Dict("Nav.Home")</a></li>
                 <li class="active">@heroHeading</li>
             </ol>
             <div class="clearfix"></div>
@@ -18,7 +22,7 @@
 </div>
 <div class="main_btm1">
     <div class="container">
-        <div class="main about span_of_3">
+        <div class="main about span_of_3" dir="ltr">
             @Html.Raw(Model.Value<string>("bodyText"))
         </div>
 
@@ -30,19 +34,19 @@
                 <div class="contact_main">
                     <div class="col-md-8">
                         <div class="contact-form">
-                            <h2>Request a Table</h2>
+                            <h2>@Dict("Contact.Heading")</h2>
                             @if (TempData["ReservationSent"] != null)
                             {
-                                <p class="reservation-success">Thanks - your reservation request has been sent, we'll confirm by phone or email shortly.</p>
+                                <p class="reservation-success">@Dict("Contact.ReservationSuccess")</p>
                             }
                             @using (Html.BeginUmbracoForm<BellaVista.Controllers.Surface.ContactSurfaceController>("HandleReservation"))
                             {
-                                <input type="text" name="Name" placeholder="Name" required />
-                                <input type="email" name="Email" placeholder="Email" required />
-                                <input type="text" name="Phone" placeholder="Phone" />
+                                <input type="text" name="Name" placeholder="@Dict("Contact.NamePlaceholder")" required />
+                                <input type="email" name="Email" placeholder="@Dict("Contact.EmailPlaceholder")" required />
+                                <input type="text" name="Phone" placeholder="@Dict("Contact.PhonePlaceholder")" />
                                 <input type="datetime-local" name="RequestedDateTime" />
-                                <textarea name="Message" placeholder="Number of guests, any requests..."></textarea>
-                                <span><input type="submit" value="submit request"></span>
+                                <textarea name="Message" placeholder="@Dict("Contact.MessagePlaceholder")"></textarea>
+                                <span><input type="submit" value="@Dict("Btn.Submit")"></span>
                             }
                         </div>
                     </div>

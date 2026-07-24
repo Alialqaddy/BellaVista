@@ -1,14 +1,18 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+﻿@using BellaVista.Helpers
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
-    string heroHeading = Model.Value<string>("heroHeading") ?? "Gallery";
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    var culture = LanguageHelper.ToCultureInfo(lang);
+    string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+    string heroHeading = Model.Value<string>("heroHeading") ?? Dict("Nav.Gallery");
 }
 <div class="main_bg">
     <div class="container">
         <div class="main_grid1">
             <h3 class="style pull-left">@heroHeading</h3>
             <ol class="breadcrumb pull-right">
-                <li><a href="/">Home</a></li>
+                <li><a href="/">@Dict("Nav.Home")</a></li>
                 <li class="active">@heroHeading</li>
             </ol>
             <div class="clearfix"></div>
@@ -19,13 +23,13 @@
     <div class="container">
         <div class="portfolio_main">
             <ul id="filters" class="clearfix">
-                <li><span class="filter active" data-filter="starter main dessert drink">All</span></li>
-                <li><span class="filter" data-filter="starter">Starters</span></li>
-                <li><span class="filter" data-filter="main">Mains</span></li>
-                <li><span class="filter" data-filter="dessert">Desserts</span></li>
-                <li><span class="filter" data-filter="drink">Drinks</span></li>
+                <li><span class="filter active" data-filter="starter main dessert drink">@Dict("Gallery.FilterAll")</span></li>
+                <li><span class="filter" data-filter="starter">@Dict("Gallery.FilterStarters")</span></li>
+                <li><span class="filter" data-filter="main">@Dict("Gallery.FilterMains")</span></li>
+                <li><span class="filter" data-filter="dessert">@Dict("Gallery.FilterDesserts")</span></li>
+                <li><span class="filter" data-filter="drink">@Dict("Gallery.FilterDrinks")</span></li>
             </ul>
-            <div id="portfoliolist">
+            <div id="portfoliolist" dir="ltr">
                 @* Block List rendering, chapter 4 (Element-Types und Blocklist) *@
                 @await Html.GetBlockListHtmlAsync(Model, "images")
             </div>
