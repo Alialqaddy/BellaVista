@@ -1,3 +1,4 @@
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @*
     Dynamic navigation (chapter 4, Übung 4): a plain Partial View, not a macro - it walks
@@ -6,7 +7,8 @@
     Login/Members-only pages since they're not meant to show up as nav items.
 *@
 @{
-    string culture = ViewData["culture"] as string ?? "de-DE";
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     string activate = Model.Root().Id == Model.Id ? "activate" : "";
 

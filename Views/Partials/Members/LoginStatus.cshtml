@@ -1,8 +1,10 @@
 @using Umbraco.Cms.Core.Security
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject IMemberManager MemberManager
 @{
-    string culture = ViewData["culture"] as string ?? "de-DE";
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     bool loggedIn = MemberManager.IsLoggedIn();
     string? memberName = loggedIn ? (await MemberManager.GetCurrentMemberAsync())?.Name : null;
@@ -10,7 +12,7 @@
 <div class="login-status">
     @if (loggedIn)
     {
-        <span class="login-status-name">@memberName</span>
+        <span class="login-status-name" dir="ltr">@memberName</span>
         @using (Html.BeginUmbracoForm<BellaVista.Controllers.Surface.MemberSurfaceController>("HandleLogout"))
         {
             <button type="submit" class="login-status-link">@Dict("Logout.Action")</button>

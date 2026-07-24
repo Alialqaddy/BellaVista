@@ -1,9 +1,13 @@
 ﻿@using Umbraco.Cms.Core.Security
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject IMemberManager MemberManager
 @{
     Layout = "Master.cshtml";
-    string heroHeading = Model.Value<string>("heroHeading") ?? "Log in";
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    var culture = LanguageHelper.ToCultureInfo(lang);
+    string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+    string heroHeading = Model.Value<string>("heroHeading") ?? Dict("Login.Title");
     bool failed = TempData["LoginFailed"] != null;
 }
 <div class="main_bg">
@@ -11,7 +15,7 @@
         <div class="main_grid1">
             <h3 class="style pull-left">@heroHeading</h3>
             <ol class="breadcrumb pull-right">
-                <li><a href="/">Home</a></li>
+                <li><a href="/">@Dict("Nav.Home")</a></li>
                 <li class="active">@heroHeading</li>
             </ol>
             <div class="clearfix"></div>
@@ -22,22 +26,22 @@
     <div class="container">
         @if (MemberManager.IsLoggedIn())
         {
-            <p>You're already logged in. Head over to the <a href="/loyal-guests">Loyal Guests</a> page.</p>
+            <p>@Dict("Login.AlreadyLoggedIn") <a href="/loyal-guests">@Dict("Nav.LoyalGuests")</a></p>
         }
         else
         {
             <div class="contact-form login-form">
                 @if (failed)
                 {
-                    <p class="reservation-success login-error">@Umbraco.GetDictionaryValue("Login.Error")</p>
+                    <p class="reservation-success login-error">@Dict("Login.Error")</p>
                 }
                 @using (Html.BeginUmbracoForm<BellaVista.Controllers.Surface.MemberSurfaceController>("HandleLogin"))
                 {
-                    <input type="text" name="Username" placeholder="Email" required />
-                    <input type="password" name="Password" placeholder="Password" required />
-                    <span><input type="submit" value="log in"></span>
+                    <input type="text" name="Username" placeholder="@Dict("Login.Username")" required />
+                    <input type="password" name="Password" placeholder="@Dict("Login.Password")" required />
+                    <span><input type="submit" value="@Dict("Login.Action")"></span>
                 }
-                <p class="login-hint">Demo account: guest@bellavista.local / LoyalGuest2026!</p>
+                <p class="login-hint" dir="ltr">Demo account: guest@bellavista.local / LoyalGuest2026!</p>
             </div>
         }
     </div>

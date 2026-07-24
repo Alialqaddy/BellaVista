@@ -1,7 +1,9 @@
-﻿@using Microsoft.AspNetCore.Http
+﻿@using System.Globalization
+@using Microsoft.AspNetCore.Http
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Cms.Core.Security
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject IMemberManager MemberManager
 @{
@@ -13,17 +15,17 @@
     string metaDescription = Model.Value<string>("metaDescription") ?? "";
     string metaKeywords = Model.Value<string>("metaKeywords") ?? "";
 
-    // -- language switcher: query string wins and is remembered in a cookie, default German --
+    // -- language switcher (Übung 7.1/7.2): plain text links in the main nav, remembered in a
+    // cookie so it sticks across pages, read consistently everywhere via LanguageHelper --
+    string lang = LanguageHelper.ResolveLangCode(Context);
     string? queryLang = Context.Request.Query["lang"].FirstOrDefault();
-    string cookieLang = Context.Request.Cookies["bv_lang"] ?? "de";
-    string lang = queryLang ?? cookieLang;
-    if (lang != "de" && lang != "en" && lang != "ar") lang = "de";
+    string cookieLang = Context.Request.Cookies["bv_lang"] ?? LanguageHelper.DefaultLangCode;
     if (queryLang != null && queryLang != cookieLang)
     {
         Context.Response.Cookies.Append("bv_lang", lang, new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1) });
     }
-    string culture = lang switch { "en" => "en-US", "ar" => "ar-SA", _ => "de-DE" };
-    bool isRtl = lang == "ar";
+    CultureInfo culture = LanguageHelper.ToCultureInfo(lang);
+    bool isRtl = LanguageHelper.IsRtl(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
 
     IEnumerable<IPublishedContent> latestNews = Model.Root()
@@ -66,15 +68,15 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                     <a href="/"><img src="/images/logo.png" alt="Bella Vista" /></a>
                 </div>
                 <div class="h_menu">
-                    <a id="touch-menu" class="mobile-menu" href="#">Menu</a>
-                    @await Html.PartialAsync("Navigation", Model, new ViewDataDictionary(ViewData) { { "culture", culture } })
+                    <a id="touch-menu" class="mobile-menu" href="#">@Dict("Nav.MobileMenuToggle")</a>
+                    @await Html.PartialAsync("Navigation", Model)
                     <ul class="lang-switch list-unstyled">
                         <li class="lang-label">@Dict("Language.Label"):</li>
                         <li class="@(lang == "de" ? "active" : "")"><a href="?lang=de">DE</a></li>
                         <li class="@(lang == "en" ? "active" : "")"><a href="?lang=en">EN</a></li>
                         <li class="@(lang == "ar" ? "active" : "")"><a href="?lang=ar">AR</a></li>
                     </ul>
-                    @await Html.PartialAsync("Members/LoginStatus", Model, new ViewDataDictionary(ViewData) { { "culture", culture } })
+                    @await Html.PartialAsync("Members/LoginStatus", Model)
                     <script src="/js/menu.js" type="text/javascript"></script>
                 </div>
                 <div class="clearfix"></div>
@@ -85,7 +87,9 @@ License URL: http://creativecommons.org/licenses/by/3.0/
     @if (Model.ContentType.Alias == "home" && Model.HasValue("slider"))
     {
         var slides = Model.Value<IEnumerable<IPublishedElement>>("slider");
-        <div id="fwslider">
+        <!-- dir="ltr" here: slide text is seeded content (kept in one language, see README),
+             not translated chrome, so it must not be bidi-reordered when the page is RTL -->
+        <div id="fwslider" dir="ltr">
             <div class="slider_container">
                 @foreach (IPublishedElement slide in slides)
                 {
@@ -110,7 +114,12 @@ License URL: http://creativecommons.org/licenses/by/3.0/
         </div>
     }
 
-    @RenderBody()
+    <!-- dir="ltr": every page's body content is seeded/authored content (German by default,
+         see README on multilingual scope), never re-translated per culture, so it must stay
+         an isolated LTR run even while the surrounding chrome flows RTL for Arabic. -->
+    <div dir="ltr">
+        @RenderBody()
+    </div>
 
     <div class="footer_bg">
         <div class="container">
@@ -119,9 +128,9 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                     <div class="f_logo">
                         <a href="/"><img src="/images/logo.png" alt="Bella Vista" /></a>
                     </div>
-                    <p class="f_para">Bella Vista is a family-run Italian restaurant serving fresh, homemade pasta, wood-fired pizza and seasonal specials.</p>
-                    <p>Phone:&nbsp;<span>(0681) 555 0142</span></p>
-                    <span>Email:&nbsp;<a href="mailto:info@bellavista.example">info@bellavista.example</a></span>
+                    <p class="f_para" dir="ltr">Bella Vista ist ein familiengeführtes italienisches Restaurant mit frischer, hausgemachter Pasta, Pizza aus dem Holzofen und saisonalen Spezialitäten.</p>
+                    <p>@(Dict("Footer.Phone")):&nbsp;<span dir="ltr">(0681) 555 0142</span></p>
+                    <span>@(Dict("Footer.Email")):&nbsp;<a href="mailto:info@bellavista.example" dir="ltr">info@bellavista.example</a></span>
                 </div>
                 <div class="col-md-2 footer1_of_3">
                     <h4>@Dict("Nav.Menu")</h4>
@@ -140,7 +149,7 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                     </ul>
                 </div>
                 <div class="col-md-4 footer_of_3">
-                    <h4>from the <span>@Dict("Nav.News")</span></h4>
+                    <h4>@Dict("Nav.News")</h4>
                     @foreach (IPublishedContent newsItem in latestNews)
                     {
                         var thumb = newsItem.Value<MediaWithCrops>("thumbnail");
@@ -153,7 +162,7 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                                     }
                                 </a>
                             </div>
-                            <div class="col-md-9 f_text">
+                            <div class="col-md-9 f_text" dir="ltr">
                                 <a href="@newsItem.Url()"><p>@(newsItem.Value<string>("teaser"))</p></a>
                                 <span>@newsItem.CreateDate.ToString("d MMMM yyyy")</span>
                             </div>
