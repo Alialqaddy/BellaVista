@@ -80,7 +80,7 @@ git would just be a source of merge conflicts.
 | **Blockgrid menu** | Each dish is a Block Grid element (`dish`: name, description, price, category, image, spice level). `menuSection` blocks (Starters/Mains/Desserts/Drinks) sit at the grid root and each expose a "dishes" **Area** so staff can drop dishes into whichever section they want. `dish` composes a small `highlightable` element type (Composition) for the "today's special" flag. | `Composing/DataTypeSeeder.cs` (`CreateMenuBlockGrid`), `Composing/ContentTypeSeeder.cs` (`CreateMenuSection`, `CreateDish`, `CreateHighlightable`), `Views/MenuPage.cshtml`, `Views/Partials/blockgrid/Components/menuSection.cshtml`, `dish.cshtml` |
 | **Custom "Spice Level" property editor** | A 0-3 chili-icon picker, built the way the course teaches: `App_Plugins/SpiceLevel/package.manifest` + an AngularJS view/controller, registered server-side via a small `[DataEditor]` class so it can be used both from the backoffice and from our code-first Data Type seeding. | `App_Plugins/SpiceLevel/`, `Composing/SpiceLevelDataEditor.cs` |
 | **Gallery with filtering** | Photos are a **Block List** of `galleryImage` elements (image, caption, category). Rendered with the theme's existing mixitup + fancybox markup/JS for the Starters/Mains/Desserts/Drinks filter buttons and lightbox. | `Composing/DataTypeSeeder.cs` (`CreateGalleryBlockList`), `Views/GalleryPage.cshtml`, `Views/Partials/blocklist/Components/galleryImage.cshtml` |
-| **Multilingual (DE/EN/AR)** | German, English and Arabic registered as Umbraco languages; all UI chrome (nav, footer, buttons, login/contact form, gallery filters) comes from **Dictionary Items**, resolved via `Umbraco.GetDictionaryValue(key, CultureInfo)` and picked via a plain-text `?lang=de/en/ar` switcher in the main nav (Übung 7.1/7.2), stored in a cookie. Arabic flips the page to `dir="rtl"`; the seeded content (dishes, news, page text - German by default, see Known Limitations) is explicitly kept `dir="ltr"` wherever it appears so untranslated text doesn't get bidi-reordered inside an RTL page. | `Composing/LanguageAndDictionarySeeder.cs`, `Helpers/LanguageHelper.cs`, language switcher + `Dict()` calls throughout `Views/` |
+| **Multilingual (DE/EN/AR)** | German, English and Arabic registered as Umbraco languages. UI chrome (nav, footer, buttons, login/contact form, gallery filters) comes from **Dictionary Items**, resolved via `Umbraco.GetDictionaryValue(key, CultureInfo)`. All seeded page content (About Us story, menu dish descriptions, gallery captions, news articles, homepage slider/testimonials, contact/loyal-guests text) is fully translated too, stored as parallel invariant properties (`fieldName` / `fieldNameEn` / `fieldNameAr`) picked at render time via `LanguageHelper.Pick(...)` - see "Why parallel properties, not Umbraco culture variance" below. Language is picked via a plain-text `?lang=de/en/ar` switcher in the main nav (Übung 7.1/7.2), stored in a cookie. Arabic flips the page to `dir="rtl"`; only genuinely untranslated content (Italian dish names, article headlines kept as authored) stays explicitly `dir="ltr"` so it doesn't get bidi-reordered inside an RTL page. | `Composing/LanguageAndDictionarySeeder.cs`, `Helpers/LanguageHelper.cs`, `Composing/ContentSeeder.cs`, language switcher + `Dict()`/`Pick()` calls throughout `Views/` |
 | **Members area** | Umbraco's built-in Member system (Identity-based): a "Loyal Guests" member group, a `/login` page (its own template, reusing the `ContentPage` doctype), and the "Loyal Guests" content node protected via Public Access so only logged-in members of that group can see it. | `Composing/MemberAndAccessSeeder.cs`, `Views/Login.cshtml`, `Views/Partials/Members/LoginStatus.cshtml`, `Controllers/Surface/MemberSurfaceController.cs` |
 | **Event-handling** | A Composer + `INotificationHandler<ContentPublishedNotification>` logs whenever a Menu page (dishes) or a News item is published, and flags whether it's the first publish (same `IRememberBeingDirty` check taught in class). | `NotificationHandlers/DishAndNewsPublishedNotificationHandler.cs` |
 | **REST API for daily specials** | An auto-routed `UmbracoApiController` (`/umbraco/api/specials/getspecials`) returns dishes flagged "today's special" across the menu, through a small Mapper class (`SpecialDto`), with the same `startFrom`/paging shape the course's News "load more" exercise uses. The homepage loads and paginates it via plain jQuery `$.get`, no full page reload. | `Controllers/Api/SpecialsController.cs`, `wwwroot/js/specials.js`, rendered into `Views/Home.cshtml` |
@@ -111,26 +111,33 @@ seeding architecture (`Composing/SchemaKeys.cs`, `Composing/BellaVistaComposer.c
 importing the Modus-Versus theme assets into `wwwroot/` - all three of us touched these as the
 project came together.
 
+## Why parallel properties, not Umbraco culture variance
+
+Translated fields are NOT implemented with Umbraco's native `ContentVariation.Culture` on
+Document Types. Reason: Name variance is coupled to a content type's culture variance - making
+properties vary by culture would force the Name to vary too, and since this site has no
+per-culture domains/hostnames (language is a `?lang=` cookie switch, not separate hostnames),
+the default culture's Name is what drives every URL segment (`/menu`, `/gallery`, `/about-us`,
+etc.). Making Name vary risked breaking those hardcoded English routes. Instead, each
+translatable field gets two extra invariant properties (`title` / `titleEn` / `titleAr`) and
+`Helpers/LanguageHelper.Pick(langCode, de, en, ar)` selects the right one at render time. This
+was a deliberate, pragmatic call by the team, not something taught in the course exercises.
+
 ## Known limitations
 
-- **Multilingual scope**: only UI chrome (nav, footer, buttons, forms, gallery filters) is
-  translated via Dictionary Items. Seeded content - dish names/descriptions, the homepage
-  slider text, gallery captions, news articles, About/Contact/Loyal Guests body text - is
-  written once, in German (the site's default language), and shown as-is regardless of which
-  language is selected; fully translating that content into English and Arabic too would need
-  three parallel sets of content, which felt like scope beyond what the course exercises ask
-  for. Dish names are kept in Italian either way, as they would be on a real Italian menu.
-  Arabic sets `dir="rtl"` on `<html>`, and every place that content appears is explicitly kept
-  `dir="ltr"` so it doesn't get bidi-reordered inside an RTL page - but we did not do a full
-  RTL layout/spacing pass on every theme component, so some visual polish (icon spacing,
-  alignment) may still look better suited to LTR.
-- **Placeholder images**: the Modus-Versus theme's own photos (`s1.jpg`-`s8.jpg`, `slider*.jpg`,
-  `blog*.jpg`, `det_pic.jpg`, `c1-c4.png`) turned out to be almost entirely unrelated to a
-  restaurant (stock photos of nail polish, a camera lens, a wheat field, European castles, and
-  - for the testimonial avatars - Adidas/Jaked/jQuery logos), and there was no way to source
-  real food photography for this project. `wwwroot/images/placeholders/` has small generated
-  SVGs (a colour tile plus a food emoji) used for the slider, dishes, gallery and news
-  thumbnails instead - not real photos, but at least not misleading ones.
+- **RTL visual polish**: Arabic sets `dir="rtl"` on `<html>`, and everything genuinely
+  untranslated (Italian dish names, prices, news article headlines) stays explicitly
+  `dir="ltr"` so it isn't bidi-reordered inside an RTL page. We did not do a full RTL
+  layout/spacing pass on every theme component, so some visual polish (icon spacing, alignment)
+  may still look better suited to LTR.
+- **Images are stock placeholders, not real photos**: the Modus-Versus theme's own photos
+  (`s1.jpg`-`s8.jpg`, `blog*.jpg`, `det_pic.jpg`, testimonial logos, etc.) were unrelated to a
+  restaurant, so every image in `wwwroot/images/placeholders/` was replaced with real photos
+  pulled from **[LoremFlickr](https://loremflickr.com/)** (`loremflickr.com/{w}/{h}/{keywords}`,
+  redirects to a matching real Flickr photo) - chosen because it's free, needs no API key or
+  attribution, and is explicitly built for placeholder use in projects like this one. These are
+  **stand-in photos for a fictional restaurant**, not real photos of a real place, and are used
+  here purely for a student course project.
 - **Reservation form / event-handling** just logs (`ILogger`) instead of sending real email -
   no SMTP/email service is configured for this course project.
 - **No named image crops**: images are served through Umbraco's default ImageSharp pipeline
