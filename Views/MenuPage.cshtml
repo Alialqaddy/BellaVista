@@ -1,0 +1,27 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    Layout = "Master.cshtml";
+    string heroHeading = Model.Value<string>("heroHeading") ?? "Menu";
+}
+<div class="main_bg">
+    <div class="container">
+        <div class="main_grid1">
+            <h3 class="style pull-left">@heroHeading</h3>
+            <ol class="breadcrumb pull-right">
+                <li><a href="/">Home</a></li>
+                <li class="active">@heroHeading</li>
+            </ol>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+<div class="main_btm1">
+    <div class="container">
+        @if (Model.HasValue("intro"))
+        {
+            <p class="menu-intro">@(Model.Value<string>("intro"))</p>
+        }
+        @* Blockgrid rendering exactly as taught: chapter 5, Übung 5.1 *@
+        @await Html.GetBlockGridHtmlAsync(Model, "dishes")
+    </div>
+</div>

@@ -1,0 +1,33 @@
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockGridItem>
+@{
+    var content = Model.Content;
+    var image = content.Value<MediaWithCrops>("image");
+    int spiceLevel = content.Value<int>("spiceLevel");
+    bool isSpecial = content.Value<bool>("isTodaysSpecial");
+}
+<div class="dish-card">
+    @if (isSpecial)
+    {
+        <span class="dish-badge">today's special</span>
+    }
+    @if (image != null)
+    {
+        <img src="@image.Content.Url()" alt="@(content.Value<string>("dishName"))" class="img-responsive" />
+    }
+    <div class="dish-card-body">
+        <div class="dish-card-header">
+            <h4>@(content.Value<string>("dishName"))</h4>
+            <span class="dish-price">@(content.Value<string>("price"))</span>
+        </div>
+        <p class="dish-description">@(content.Value<string>("description"))</p>
+        <div class="spice-level" title="Spice level: @spiceLevel/3">
+            @for (int i = 1; i <= 3; i++)
+            {
+                <i class="fa fa-fire @(i <= spiceLevel ? "spice-active" : "spice-inactive")"></i>
+            }
+        </div>
+    </div>
+</div>

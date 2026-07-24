@@ -1,0 +1,8 @@
+{
+    "javascript": [
+        "~/App_Plugins/SpiceLevel/spicelevel.controller.js"
+    ],
+    "css": [
+        "~/App_Plugins/SpiceLevel/spicelevel.css"
+    ]
+}

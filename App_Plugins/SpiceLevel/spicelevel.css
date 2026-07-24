@@ -1,0 +1,21 @@
+.bv-spicelevel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bv-chili {
+    cursor: pointer;
+    font-size: 20px;
+    color: #ccc;
+}
+
+.bv-chili-active {
+    color: #d9534f;
+}
+
+.bv-chili-clear {
+    margin-left: 10px;
+    font-size: 12px;
+    cursor: pointer;
+}

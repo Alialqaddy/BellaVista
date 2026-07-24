@@ -1,0 +1,10 @@
+<div ng-controller="BellaVista.SpiceLevelController" class="bv-spicelevel">
+    <span ng-repeat="i in [1,2,3]"
+          class="bv-chili"
+          ng-class="{'bv-chili-active': i <= model.value}"
+          ng-click="setLevel(i)"
+          title="{{i}} of 3">
+        <i class="icon-fire"></i>
+    </span>
+    <a ng-if="model.value" ng-click="setLevel(0)" class="bv-chili-clear">clear</a>
+</div>
