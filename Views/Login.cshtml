@@ -1,0 +1,44 @@
+﻿@using Umbraco.Cms.Core.Security
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IMemberManager MemberManager
+@{
+    Layout = "Master.cshtml";
+    string heroHeading = Model.Value<string>("heroHeading") ?? "Log in";
+    bool failed = TempData["LoginFailed"] != null;
+}
+<div class="main_bg">
+    <div class="container">
+        <div class="main_grid1">
+            <h3 class="style pull-left">@heroHeading</h3>
+            <ol class="breadcrumb pull-right">
+                <li><a href="/">Home</a></li>
+                <li class="active">@heroHeading</li>
+            </ol>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+<div class="main_btm1">
+    <div class="container">
+        @if (MemberManager.IsLoggedIn())
+        {
+            <p>You're already logged in. Head over to the <a href="/loyal-guests">Loyal Guests</a> page.</p>
+        }
+        else
+        {
+            <div class="contact-form login-form">
+                @if (failed)
+                {
+                    <p class="reservation-success login-error">@Umbraco.GetDictionaryValue("Login.Error")</p>
+                }
+                @using (Html.BeginUmbracoForm<BellaVista.Controllers.Surface.MemberSurfaceController>("HandleLogin"))
+                {
+                    <input type="text" name="Username" placeholder="Email" required />
+                    <input type="password" name="Password" placeholder="Password" required />
+                    <span><input type="submit" value="log in"></span>
+                }
+                <p class="login-hint">Demo account: guest@bellavista.local / LoyalGuest2026!</p>
+            </div>
+        }
+    </div>
+</div>

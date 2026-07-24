@@ -1,0 +1,23 @@
+@using Umbraco.Cms.Core.Security
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IMemberManager MemberManager
+@{
+    string culture = ViewData["culture"] as string ?? "de-DE";
+    string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+    bool loggedIn = MemberManager.IsLoggedIn();
+    string? memberName = loggedIn ? (await MemberManager.GetCurrentMemberAsync())?.Name : null;
+}
+<div class="login-status">
+    @if (loggedIn)
+    {
+        <span class="login-status-name">@memberName</span>
+        @using (Html.BeginUmbracoForm<BellaVista.Controllers.Surface.MemberSurfaceController>("HandleLogout"))
+        {
+            <button type="submit" class="login-status-link">@Dict("Logout.Action")</button>
+        }
+    }
+    else
+    {
+        <a class="login-status-link" href="/login">@Dict("Login.Title")</a>
+    }
+</div>
