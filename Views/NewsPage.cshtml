@@ -1,0 +1,54 @@
+﻿@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    Layout = "Master.cshtml";
+    string heroHeading = Model.Value<string>("heroHeading") ?? "News";
+}
+<div class="main_bg">
+    <div class="container">
+        <div class="main_grid1">
+            <h3 class="style pull-left">@heroHeading</h3>
+            <ol class="breadcrumb pull-right">
+                <li><a href="/">Home</a></li>
+                <li class="active">@heroHeading</li>
+            </ol>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+<div class="main_btm1">
+    <div class="container">
+        @if (Model.HasValue("intro"))
+        {
+            <p class="menu-intro">@(Model.Value<string>("intro"))</p>
+        }
+        <div class="blog">
+            <div class="blog_main col-md-12">
+                @foreach (IPublishedContent item in Model.Children("newsItem").OrderByDescending(n => n.CreateDate))
+                {
+                    var thumb = item.Value<MediaWithCrops>("thumbnail");
+                    <div class="blog_list">
+                        <div class="col-md-2 blog_date">
+                            <span class="date">@item.CreateDate.ToString("MMM")<p>@item.CreateDate.ToString("dd")<p></p></span>
+                            <span class="icon_date"><i class="fa fa-newspaper-o"></i></span>
+                        </div>
+                        <div class="col-md-10 blog_left">
+                            @if (thumb != null)
+                            {
+                                <a href="@item.Url()"><img src="@thumb.Content.Url()" alt="" class="img-responsive" /></a>
+                            }
+                            <h4><a href="@item.Url()">@item.Name</a></h4>
+                            <p class="para">@(item.Value<string>("teaser"))</p>
+                            <div class="read_btn">
+                                <a href="@item.Url()"><button class="btn">@Umbraco.GetDictionaryValue("Btn.ReadMore")</button></a>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                }
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,34 @@
+﻿@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    Layout = "Master.cshtml";
+    var thumb = Model.Value<MediaWithCrops>("thumbnail");
+}
+<div class="main_bg">
+    <div class="container">
+        <div class="main_grid1">
+            <h3 class="style pull-left">@Model.Name</h3>
+            <ol class="breadcrumb pull-right">
+                <li><a href="/">Home</a></li>
+                <li><a href="@Model.Parent!.Url()">News</a></li>
+                <li class="active">@Model.Name</li>
+            </ol>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+<div class="main_btm1">
+    <div class="container">
+        <div class="details">
+            <h2>@Model.Name</h2>
+            <span class="news-date">@Model.CreateDate.ToString("d MMMM yyyy")</span>
+            @if (thumb != null)
+            {
+                <img src="@thumb.Content.Url()" alt="" class="img-responsive" />
+            }
+            @Html.Raw(Model.Value<string>("bodyText"))
+            <a href="@Model.Parent!.Url()" class="btn">back to news</a>
+        </div>
+    </div>
+</div>
