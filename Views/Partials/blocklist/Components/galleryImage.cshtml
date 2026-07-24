@@ -1,13 +1,30 @@
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Cms.Core.Models.PublishedContent
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockListItem>
 @{
     var content = Model.Content;
     var image = content.Value<MediaWithCrops>("image");
     string category = content.Value<string>("category") ?? "";
+    string categorySlug = category.ToLowerInvariant();
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    var culture = LanguageHelper.ToCultureInfo(lang);
+    string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+
+    // The stored category value ("Starter"/"Main"/...) also drives the mixitup filter
+    // (data-cat/class below), so it stays as-is for that; the VISIBLE label reuses the
+    // same Dictionary Items as the Gallery filter buttons, so it's translated too.
+    string categoryLabel = categorySlug switch
+    {
+        "starter" => Dict("Gallery.FilterStarters"),
+        "main" => Dict("Gallery.FilterMains"),
+        "dessert" => Dict("Gallery.FilterDesserts"),
+        "drink" => Dict("Gallery.FilterDrinks"),
+        _ => category,
+    };
 }
-<div class="portfolio gallery-@category.ToLowerInvariant()" data-cat="@category.ToLowerInvariant()">
+<div class="portfolio gallery-@categorySlug" data-cat="@categorySlug">
     <div class="portfolio-wrapper">
         @if (image != null)
         {
@@ -19,7 +36,7 @@
         }
         <div class="label">
             <div class="label-text">
-                <span class="text-category">@category</span>
+                <span class="text-category">@categoryLabel</span>
             </div>
             <div class="label-bg"></div>
         </div>
