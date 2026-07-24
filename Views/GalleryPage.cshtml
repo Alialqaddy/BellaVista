@@ -1,0 +1,47 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    Layout = "Master.cshtml";
+    string heroHeading = Model.Value<string>("heroHeading") ?? "Gallery";
+}
+<div class="main_bg">
+    <div class="container">
+        <div class="main_grid1">
+            <h3 class="style pull-left">@heroHeading</h3>
+            <ol class="breadcrumb pull-right">
+                <li><a href="/">Home</a></li>
+                <li class="active">@heroHeading</li>
+            </ol>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+<div class="main_btm1">
+    <div class="container">
+        <div class="portfolio_main">
+            <ul id="filters" class="clearfix">
+                <li><span class="filter active" data-filter="starter main dessert drink">All</span></li>
+                <li><span class="filter" data-filter="starter">Starters</span></li>
+                <li><span class="filter" data-filter="main">Mains</span></li>
+                <li><span class="filter" data-filter="dessert">Desserts</span></li>
+                <li><span class="filter" data-filter="drink">Drinks</span></li>
+            </ul>
+            <div id="portfoliolist">
+                @* Block List rendering, chapter 4 (Element-Types und Blocklist) *@
+                @await Html.GetBlockListHtmlAsync(Model, "images")
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(function () {
+            $('#portfoliolist').mixitup({
+                targetSelector: '.portfolio',
+                filterSelector: '.filter',
+                effects: ['fade'],
+                easing: 'snap'
+            });
+        });
+    </script>
+}
