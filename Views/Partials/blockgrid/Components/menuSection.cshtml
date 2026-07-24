@@ -1,12 +1,13 @@
 @using Umbraco.Cms.Core.Models.Blocks
+@using BellaVista.Helpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockGridItem>
 @{
     var content = Model.Content;
+    string lang = LanguageHelper.ResolveLangCode(Context);
+    string sectionTitle = LanguageHelper.Pick(lang, content.Value<string>("sectionTitle"), content.Value<string>("sectionTitleEn"), content.Value<string>("sectionTitleAr"));
 }
 <div class="menu-section">
-    @* dir="ltr": section titles (Vorspeisen/Hauptgerichte/...) are seeded content, not
-       Dictionary-translated chrome - see README on multilingual scope. *@
-    <h3 class="menu-section-title" dir="ltr">@(content.Value<string>("sectionTitle"))</h3>
+    <h3 class="menu-section-title">@sectionTitle</h3>
     <div class="menu-section-dishes">
         @await Html.GetBlockGridItemAreasHtmlAsync(Model)
     </div>

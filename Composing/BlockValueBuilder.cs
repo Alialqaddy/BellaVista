@@ -34,7 +34,7 @@ public static class BlockValueBuilder
     /// <summary>Raw value for a (single-select) Dropdown property.</summary>
     public static string DropDownJson(string selected) => ToJson(new JArray(selected));
 
-    public record SlideItemInput(string Title, string SubTitle, Guid ImageMediaKey);
+    public record SlideItemInput(string Title, string TitleEn, string TitleAr, string SubTitle, string SubTitleEn, string SubTitleAr, Guid ImageMediaKey);
 
     /// <summary>Builds the JSON for a NestedContent "slider" property (Übung 4.2).</summary>
     public static string BuildSlider(IEnumerable<SlideItemInput> slides)
@@ -47,14 +47,18 @@ public static class BlockValueBuilder
                 new JProperty("name", slide.Title),
                 new JProperty("ncContentTypeAlias", "slideItem"),
                 new JProperty("title", slide.Title),
+                new JProperty("titleEn", slide.TitleEn),
+                new JProperty("titleAr", slide.TitleAr),
                 new JProperty("subTitle", slide.SubTitle),
+                new JProperty("subTitleEn", slide.SubTitleEn),
+                new JProperty("subTitleAr", slide.SubTitleAr),
                 new JProperty("bgImage", MediaPickerValue(slide.ImageMediaKey))));
         }
 
         return array.ToString(Formatting.None);
     }
 
-    public record GalleryImageInput(string Caption, string Category, Guid ImageMediaKey);
+    public record GalleryImageInput(string Caption, string CaptionEn, string CaptionAr, string Category, Guid ImageMediaKey);
 
     /// <summary>Builds the JSON for the Gallery page's "images" Block List property.</summary>
     public static string BuildGallery(IEnumerable<GalleryImageInput> images)
@@ -67,6 +71,8 @@ public static class BlockValueBuilder
             var udi = new GuidUdi(Constants.UdiEntityType.Element, Guid.NewGuid());
             var data = new BlockItemData { ContentTypeKey = SchemaKeys.GalleryImage, Udi = udi };
             data.RawPropertyValues["caption"] = image.Caption;
+            data.RawPropertyValues["captionEn"] = image.CaptionEn;
+            data.RawPropertyValues["captionAr"] = image.CaptionAr;
             data.RawPropertyValues["category"] = new JArray(image.Category);
             data.RawPropertyValues["image"] = MediaPickerValue(image.ImageMediaKey);
 
@@ -78,9 +84,9 @@ public static class BlockValueBuilder
         return ToJson(value);
     }
 
-    public record DishInput(string Name, string Description, string Price, string Category, Guid ImageMediaKey, int SpiceLevel, bool IsTodaysSpecial);
+    public record DishInput(string Name, string Description, string DescriptionEn, string DescriptionAr, string Price, string Category, Guid ImageMediaKey, int SpiceLevel, bool IsTodaysSpecial);
 
-    public record MenuSectionInput(string Title, IReadOnlyList<DishInput> Dishes);
+    public record MenuSectionInput(string Title, string TitleEn, string TitleAr, IReadOnlyList<DishInput> Dishes);
 
     /// <summary>Builds the JSON for the Menu page's "dishes" Block Grid property (sections at root, dishes inside each section's "dishes" Area).</summary>
     public static string BuildMenu(IEnumerable<MenuSectionInput> sections)
@@ -93,6 +99,8 @@ public static class BlockValueBuilder
             var sectionUdi = new GuidUdi(Constants.UdiEntityType.Element, Guid.NewGuid());
             var sectionData = new BlockItemData { ContentTypeKey = SchemaKeys.MenuSection, Udi = sectionUdi };
             sectionData.RawPropertyValues["sectionTitle"] = section.Title;
+            sectionData.RawPropertyValues["sectionTitleEn"] = section.TitleEn;
+            sectionData.RawPropertyValues["sectionTitleAr"] = section.TitleAr;
             value.ContentData.Add(sectionData);
 
             var dishLayoutItems = new List<BlockGridLayoutItem>();
@@ -102,6 +110,8 @@ public static class BlockValueBuilder
                 var dishData = new BlockItemData { ContentTypeKey = SchemaKeys.Dish, Udi = dishUdi };
                 dishData.RawPropertyValues["dishName"] = dish.Name;
                 dishData.RawPropertyValues["description"] = dish.Description;
+                dishData.RawPropertyValues["descriptionEn"] = dish.DescriptionEn;
+                dishData.RawPropertyValues["descriptionAr"] = dish.DescriptionAr;
                 dishData.RawPropertyValues["price"] = dish.Price;
                 dishData.RawPropertyValues["category"] = new JArray(dish.Category);
                 dishData.RawPropertyValues["image"] = MediaPickerValue(dish.ImageMediaKey);

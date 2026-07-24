@@ -32,4 +32,12 @@ public static class LanguageHelper
     public static CultureInfo ToCultureInfo(string langCode) => CultureInfo.GetCultureInfo(ToIsoCode(langCode));
 
     public static bool IsRtl(string langCode) => langCode == "ar";
+
+    /// <summary>Picks the DE/EN/AR value for the current language, falling back to German if the EN/AR field is empty.</summary>
+    public static string Pick(string langCode, string? de, string? en, string? ar) => langCode switch
+    {
+        "en" => string.IsNullOrEmpty(en) ? (de ?? "") : en,
+        "ar" => string.IsNullOrEmpty(ar) ? (de ?? "") : ar,
+        _ => de ?? "",
+    };
 }

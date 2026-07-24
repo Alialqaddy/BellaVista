@@ -26,6 +26,19 @@ public class ContentTypeSeeder
     private PropertyType Prop(string alias, string name, IDataType dataType) =>
         new(_shortStringHelper, dataType, alias) { Name = name };
 
+    /// <summary>
+    /// Adds a translatable field as three parallel properties (base = German, +En, +Ar),
+    /// picked at render time via LanguageHelper.Pick - see README for why this is used
+    /// instead of Umbraco's native culture variance (it would require per-culture domains
+    /// and would change every page's URL segment, which the rest of the site depends on).
+    /// </summary>
+    private void AddTranslatable(IContentType ct, string alias, string name, IDataType dataType, string group)
+    {
+        ct.AddPropertyType(Prop(alias, name, dataType), group, group);
+        ct.AddPropertyType(Prop(alias + "En", name + " (English)", dataType), group, group);
+        ct.AddPropertyType(Prop(alias + "Ar", name + " (Arabic)", dataType), group, group);
+    }
+
     private IContentType NewType(Guid key, string alias, string name, string icon, bool isElement)
     {
         var ct = new ContentType(_shortStringHelper, -1)
@@ -55,8 +68,8 @@ public class ContentTypeSeeder
         var textarea = _dataTypeService.GetDataType("Textarea")!;
 
         var ct = NewType(SchemaKeys.SeoComposition, "seoComposition", "SEO Composition", "icon-search", isElement: false);
-        ct.AddPropertyType(Prop("pageTitle", "Page title", textstring), "SEO", "SEO");
-        ct.AddPropertyType(Prop("metaDescription", "Meta description", textarea), "SEO", "SEO");
+        AddTranslatable(ct, "pageTitle", "Page title", textstring, "SEO");
+        AddTranslatable(ct, "metaDescription", "Meta description", textarea, "SEO");
         ct.AddPropertyType(Prop("metaKeywords", "Meta keywords", textstring), "SEO", "SEO");
         Save(ct);
         return ct;
@@ -90,7 +103,7 @@ public class ContentTypeSeeder
         ct.AllowedAsRoot = true;
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        ct.AddPropertyType(Prop("titleAppend", "Title append (site name shown after every page title)", textstring), "Content", "Content");
+        AddTranslatable(ct, "titleAppend", "Title append (site name shown after every page title)", textstring, "Content");
         ct.AddPropertyType(Prop("slider", "Homepage slider", slider), "Content", "Content");
         Save(ct);
         return ct;
@@ -108,8 +121,8 @@ public class ContentTypeSeeder
         var ct = NewType(SchemaKeys.ContentPage, "contentPage", "Content Page", "icon-document", isElement: false);
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        ct.AddPropertyType(Prop("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
-        ct.AddPropertyType(Prop("bodyText", "Body text", richtext), "Content", "Content");
+        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
+        AddTranslatable(ct, "bodyText", "Body text", richtext, "Content");
         ct.AddPropertyType(Prop("showContactForm", "Show the reservation form + map (Contact page only)", boolean), "Content", "Content");
         Save(ct);
         return ct;
@@ -127,8 +140,8 @@ public class ContentTypeSeeder
         var ct = NewType(SchemaKeys.MenuPage, "menuPage", "Menu Page", "icon-fork-knife", isElement: false);
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        ct.AddPropertyType(Prop("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
-        ct.AddPropertyType(Prop("intro", "Short intro text", textarea), "Content", "Content");
+        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
+        AddTranslatable(ct, "intro", "Short intro text", textarea, "Content");
         ct.AddPropertyType(Prop("dishes", "Menu (sections + dishes)", blockGrid), "Content", "Content");
         Save(ct);
         return ct;
@@ -145,7 +158,7 @@ public class ContentTypeSeeder
         var ct = NewType(SchemaKeys.GalleryPage, "galleryPage", "Gallery Page", "icon-picture", isElement: false);
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        ct.AddPropertyType(Prop("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
+        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
         ct.AddPropertyType(Prop("images", "Gallery photos", blockList), "Content", "Content");
         Save(ct);
         return ct;
@@ -162,8 +175,8 @@ public class ContentTypeSeeder
         var ct = NewType(SchemaKeys.NewsPage, "newsPage", "News Page", "icon-newspaper", isElement: false);
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        ct.AddPropertyType(Prop("heroHeading", "Heading shown in the page banner", textstring), "Content", "Content");
-        ct.AddPropertyType(Prop("intro", "Short intro text", textarea), "Content", "Content");
+        AddTranslatable(ct, "heroHeading", "Heading shown in the page banner", textstring, "Content");
+        AddTranslatable(ct, "intro", "Short intro text", textarea, "Content");
         Save(ct);
         return ct;
     }
@@ -180,8 +193,8 @@ public class ContentTypeSeeder
         var ct = NewType(SchemaKeys.NewsItem, "newsItem", "News Item", "icon-news", isElement: false);
         ct.AddContentType(master);
         ct.AddContentType(seoComposition);
-        ct.AddPropertyType(Prop("teaser", "Teaser (shown in the news list)", textarea), "Content", "Content");
-        ct.AddPropertyType(Prop("bodyText", "Body text", richtext), "Content", "Content");
+        AddTranslatable(ct, "teaser", "Teaser (shown in the news list)", textarea, "Content");
+        AddTranslatable(ct, "bodyText", "Body text", richtext, "Content");
         ct.AddPropertyType(Prop("thumbnail", "Thumbnail image", image), "Content", "Content");
         Save(ct);
         return ct;
@@ -198,8 +211,8 @@ public class ContentTypeSeeder
         var image = _dataTypeService.GetDataType("Bella Vista - Single Image")!;
 
         var ct = NewType(SchemaKeys.SlideItem, "slideItem", "Slide Item", "icon-picture", isElement: true);
-        ct.AddPropertyType(Prop("title", "Title", textstring), "Content", "Content");
-        ct.AddPropertyType(Prop("subTitle", "Subtitle", textstring), "Content", "Content");
+        AddTranslatable(ct, "title", "Title", textstring, "Content");
+        AddTranslatable(ct, "subTitle", "Subtitle", textstring, "Content");
         ct.AddPropertyType(Prop("bgImage", "Background image", image), "Content", "Content");
         Save(ct);
         return ct;
@@ -214,7 +227,7 @@ public class ContentTypeSeeder
         var image = _dataTypeService.GetDataType("Bella Vista - Single Image")!;
 
         var ct = NewType(SchemaKeys.GalleryImage, "galleryImage", "Gallery Image", "icon-picture", isElement: true);
-        ct.AddPropertyType(Prop("caption", "Caption", textstring), "Content", "Content");
+        AddTranslatable(ct, "caption", "Caption", textstring, "Content");
         ct.AddPropertyType(Prop("category", "Category", categoryDropDown), "Content", "Content");
         ct.AddPropertyType(Prop("image", "Image", image), "Content", "Content");
         Save(ct);
@@ -244,7 +257,7 @@ public class ContentTypeSeeder
 
         var textstring = _dataTypeService.GetDataType("Textstring")!;
         var ct = NewType(SchemaKeys.MenuSection, "menuSection", "Menu Section", "icon-list", isElement: true);
-        ct.AddPropertyType(Prop("sectionTitle", "Section title (e.g. Starters)", textstring), "Content", "Content");
+        AddTranslatable(ct, "sectionTitle", "Section title (e.g. Starters)", textstring, "Content");
         Save(ct);
         return ct;
     }
@@ -262,7 +275,7 @@ public class ContentTypeSeeder
         var ct = NewType(SchemaKeys.Dish, "dish", "Dish", "icon-restaurant", isElement: true);
         ct.AddContentType(highlightable);
         ct.AddPropertyType(Prop("dishName", "Dish name", textstring), "Content", "Content");
-        ct.AddPropertyType(Prop("description", "Description", textarea), "Content", "Content");
+        AddTranslatable(ct, "description", "Description", textarea, "Content");
         ct.AddPropertyType(Prop("price", "Price (e.g. 12,50 €)", textstring), "Content", "Content");
         ct.AddPropertyType(Prop("category", "Category", categoryDropDown), "Content", "Content");
         ct.AddPropertyType(Prop("image", "Image", image), "Content", "Content");

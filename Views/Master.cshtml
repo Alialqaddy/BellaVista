@@ -9,15 +9,20 @@
 @{
     Layout = null;
 
-    // -- SEO composition (chapter 2 / "reusable SEO composition") --
-    string pageTitle = Model.HasValue("pageTitle") ? Model.Value<string>("pageTitle")! : Model.Name;
-    string titleAppend = Model.Value<string>("titleAppend", fallback: Fallback.ToAncestors) ?? "";
-    string metaDescription = Model.Value<string>("metaDescription") ?? "";
-    string metaKeywords = Model.Value<string>("metaKeywords") ?? "";
-
     // -- language switcher (Übung 7.1/7.2): plain text links in the main nav, remembered in a
     // cookie so it sticks across pages, read consistently everywhere via LanguageHelper --
     string lang = LanguageHelper.ResolveLangCode(Context);
+
+    // -- SEO composition (chapter 2 / "reusable SEO composition") - fully translated (DE/EN/AR) --
+    string pageTitle = LanguageHelper.Pick(lang,
+        Model.HasValue("pageTitle") ? Model.Value<string>("pageTitle") : Model.Name,
+        Model.Value<string>("pageTitleEn"), Model.Value<string>("pageTitleAr"));
+    string titleAppend = LanguageHelper.Pick(lang,
+        Model.Value<string>("titleAppend", fallback: Fallback.ToAncestors),
+        Model.Value<string>("titleAppendEn", fallback: Fallback.ToAncestors),
+        Model.Value<string>("titleAppendAr", fallback: Fallback.ToAncestors));
+    string metaDescription = LanguageHelper.Pick(lang, Model.Value<string>("metaDescription"), Model.Value<string>("metaDescriptionEn"), Model.Value<string>("metaDescriptionAr"));
+    string metaKeywords = Model.Value<string>("metaKeywords") ?? "";
     string? queryLang = Context.Request.Query["lang"].FirstOrDefault();
     string cookieLang = Context.Request.Cookies["bv_lang"] ?? LanguageHelper.DefaultLangCode;
     if (queryLang != null && queryLang != cookieLang)
@@ -87,22 +92,22 @@ License URL: http://creativecommons.org/licenses/by/3.0/
     @if (Model.ContentType.Alias == "home" && Model.HasValue("slider"))
     {
         var slides = Model.Value<IEnumerable<IPublishedElement>>("slider");
-        <!-- dir="ltr" here: slide text is seeded content (kept in one language, see README),
-             not translated chrome, so it must not be bidi-reordered when the page is RTL -->
-        <div id="fwslider" dir="ltr">
+        <div id="fwslider">
             <div class="slider_container">
                 @foreach (IPublishedElement slide in slides)
                 {
                     var slideImage = slide.Value<MediaWithCrops>("bgImage");
+                    string slideTitle = LanguageHelper.Pick(lang, slide.Value<string>("title"), slide.Value<string>("titleEn"), slide.Value<string>("titleAr"));
+                    string slideSubTitle = LanguageHelper.Pick(lang, slide.Value<string>("subTitle"), slide.Value<string>("subTitleEn"), slide.Value<string>("subTitleAr"));
                     <div class="slide">
                         @if (slideImage != null)
                         {
-                            <img src="@slideImage.Content.Url()" alt="@(slide.Value<string>("title"))" />
+                            <img src="@slideImage.Content.Url()" alt="@slideTitle" />
                         }
                         <div class="slide_content">
                             <div class="slide_content_wrap">
-                                <h4 class="title">@(slide.Value<string>("title"))</h4>
-                                <p class="description">@(slide.Value<string>("subTitle"))</p>
+                                <h4 class="title">@slideTitle</h4>
+                                <p class="description">@slideSubTitle</p>
                             </div>
                         </div>
                     </div>
@@ -114,12 +119,7 @@ License URL: http://creativecommons.org/licenses/by/3.0/
         </div>
     }
 
-    <!-- dir="ltr": every page's body content is seeded/authored content (German by default,
-         see README on multilingual scope), never re-translated per culture, so it must stay
-         an isolated LTR run even while the surrounding chrome flows RTL for Arabic. -->
-    <div dir="ltr">
-        @RenderBody()
-    </div>
+    @RenderBody()
 
     <div class="footer_bg">
         <div class="container">
@@ -128,7 +128,10 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                     <div class="f_logo">
                         <a href="/"><img src="/images/logo.png" alt="Bella Vista" /></a>
                     </div>
-                    <p class="f_para" dir="ltr">Bella Vista ist ein familiengeführtes italienisches Restaurant mit frischer, hausgemachter Pasta, Pizza aus dem Holzofen und saisonalen Spezialitäten.</p>
+                    <p class="f_para">@LanguageHelper.Pick(lang,
+                        "Bella Vista ist ein familiengeführtes italienisches Restaurant mit frischer, hausgemachter Pasta, Pizza aus dem Holzofen und saisonalen Spezialitäten.",
+                        "Bella Vista is a family-run Italian restaurant serving fresh, homemade pasta, wood-fired pizza and seasonal specialties.",
+                        "بيلا فيستا مطعم إيطالي عائلي يقدم المعكرونة الطازجة المصنوعة يدويًا والبيتزا من الفرن الحطبي والأطباق الموسمية المميزة.")</p>
                     <p>@(Dict("Footer.Phone")):&nbsp;<span dir="ltr">(0681) 555 0142</span></p>
                     <span>@(Dict("Footer.Email")):&nbsp;<a href="mailto:info@bellavista.example" dir="ltr">info@bellavista.example</a></span>
                 </div>
@@ -162,8 +165,8 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                                     }
                                 </a>
                             </div>
-                            <div class="col-md-9 f_text" dir="ltr">
-                                <a href="@newsItem.Url()"><p>@(newsItem.Value<string>("teaser"))</p></a>
+                            <div class="col-md-9 f_text">
+                                <a href="@newsItem.Url()"><p>@LanguageHelper.Pick(lang, newsItem.Value<string>("teaser"), newsItem.Value<string>("teaserEn"), newsItem.Value<string>("teaserAr"))</p></a>
                                 <span>@newsItem.CreateDate.ToString("d MMMM yyyy")</span>
                             </div>
                             <div class="clearfix"></div>

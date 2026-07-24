@@ -6,6 +6,7 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Web.Common.Controllers;
 using Umbraco.Extensions;
+using BellaVista.Helpers;
 
 namespace BellaVista.Controllers.Api;
 
@@ -42,6 +43,7 @@ public class SpecialsController : UmbracoApiController
     public IActionResult GetSpecials(int startFrom = 0, int take = 3)
     {
         List<SpecialDto> all = new();
+        string lang = LanguageHelper.ResolveLangCode(HttpContext);
 
         IEnumerable<IPublishedContent> menuPages = _publishedContentQuery.ContentAtRoot()
             .SelectMany(root => root.DescendantsOrSelf("menuPage"));
@@ -64,7 +66,7 @@ public class SpecialsController : UmbracoApiController
                         all.Add(new SpecialDto
                         {
                             Name = dish.Value<string>("dishName") ?? "",
-                            Description = dish.Value<string>("description") ?? "",
+                            Description = LanguageHelper.Pick(lang, dish.Value<string>("description"), dish.Value<string>("descriptionEn"), dish.Value<string>("descriptionAr")),
                             Price = dish.Value<string>("price") ?? "",
                             Category = dish.Value<string>("category") ?? "",
                             SpiceLevel = dish.Value<int>("spiceLevel"),

@@ -5,7 +5,8 @@
     string lang = LanguageHelper.ResolveLangCode(Context);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
-    string heroHeading = Model.Value<string>("heroHeading") ?? Dict("Nav.Menu");
+    string heroHeading = LanguageHelper.Pick(lang, Model.Value<string>("heroHeading"), Model.Value<string>("heroHeadingEn"), Model.Value<string>("heroHeadingAr")) is { Length: > 0 } h ? h : Dict("Nav.Menu");
+    string intro = LanguageHelper.Pick(lang, Model.Value<string>("intro"), Model.Value<string>("introEn"), Model.Value<string>("introAr"));
 }
 <div class="main_bg">
     <div class="container">
@@ -21,9 +22,9 @@
 </div>
 <div class="main_btm1">
     <div class="container">
-        @if (Model.HasValue("intro"))
+        @if (!string.IsNullOrEmpty(intro))
         {
-            <p class="menu-intro" dir="ltr">@(Model.Value<string>("intro"))</p>
+            <p class="menu-intro">@intro</p>
         }
         @* Blockgrid rendering exactly as taught: chapter 5, Übung 5.1.
            Direction scoping for dish/section text happens inside each block

@@ -5,17 +5,20 @@
     string lang = LanguageHelper.ResolveLangCode(Context);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+    string P(string de, string en, string ar) => LanguageHelper.Pick(lang, de, en, ar);
 }
 @section Scripts {
     <script src="~/js/specials.js"></script>
 }
-<div class="main_bg" dir="ltr">
+<div class="main_bg">
     <div class="container">
         <div class="main_grid">
             <div class="top_grid">
                 <div class="col-md-10 span1_of_1">
-                    <h3>Warum Gäste Bella Vista lieben</h3>
-                    <p>Frische Pasta, ein Holzofen und eine Speisekarte, die sich mit den Jahreszeiten ändert - gekocht, wie unser Küchenteam es von zu Hause kennt.</p>
+                    <h3>@P("Warum Gäste Bella Vista lieben", "Why guests love Bella Vista", "لماذا يحب ضيوفنا بيلا فيستا")</h3>
+                    <p>@P("Frische Pasta, ein Holzofen und eine Speisekarte, die sich mit den Jahreszeiten ändert - gekocht, wie unser Küchenteam es von zu Hause kennt.",
+                        "Fresh pasta, a wood-fired oven, and a menu that changes with the seasons - cooked the way our kitchen team knows it from home.",
+                        "معكرونة طازجة، فرن خشبي، وقائمة طعام تتغير مع الفصول - يُطهى كل ذلك كما اعتاد فريق مطبخنا في بيوتهم.")</p>
                 </div>
                 <div class="col-md-2 span1_of_2">
                     <a class="btn" href="/menu">@Dict("Home.ViewMenuBtn")</a>
@@ -26,29 +29,37 @@
                 <div class="col-md-3 span1_of_4">
                     <div class="span4_of_list">
                         <span class="active"><i class="fa fa-cutlery"></i></span>
-                        <h3>Täglich frische Pasta</h3>
-                        <p>Jede Tagliatelle, jeder Raviolo und Gnocco wird jeden Morgen im Haus gerollt und geformt, nie tiefgefroren.</p>
+                        <h3>@P("Täglich frische Pasta", "Fresh Pasta Daily", "معكرونة طازجة يومياً")</h3>
+                        <p>@P("Jede Tagliatelle, jeder Raviolo und Gnocco wird jeden Morgen im Haus gerollt und geformt, nie tiefgefroren.",
+                            "Every tagliatelle, ravioli and gnocco is rolled and shaped in-house each morning, never frozen.",
+                            "كل تالياتيلي ورافيولي وجنوكي يُحضَّر ويُشكَّل يدوياً كل صباح، ولا يُجمَّد أبداً.")</p>
                     </div>
                 </div>
                 <div class="col-md-3 span1_of_4">
                     <div class="span4_of_list">
                         <span><i class="fa fa-fire"></i></span>
-                        <h3>Holzofen</h3>
-                        <p>Unser Pizzaofen wurde aus Neapel importiert und läuft mit Buchenholz für die richtige knusprige Kruste.</p>
+                        <h3>@P("Holzofen", "Wood-Fired Oven", "فرن خشبي")</h3>
+                        <p>@P("Unser Pizzaofen wurde aus Neapel importiert und läuft mit Buchenholz für die richtige knusprige Kruste.",
+                            "Our pizza oven was imported from Naples and runs on beechwood for the perfect crispy crust.",
+                            "فرن البيتزا لدينا مستورد من نابولي ويعمل بخشب الزان للحصول على القشرة المقرمشة المثالية.")</p>
                     </div>
                 </div>
                 <div class="col-md-3 span1_of_4">
                     <div class="span4_of_list">
                         <span><i class="fa fa-leaf"></i></span>
-                        <h3>Saisonale Karte</h3>
-                        <p>Die Speisekarte ändert sich mit dem, was gerade frisch auf dem Markt ist - es gibt immer etwas Neues zu entdecken.</p>
+                        <h3>@P("Saisonale Karte", "Seasonal Menu", "قائمة موسمية")</h3>
+                        <p>@P("Die Speisekarte ändert sich mit dem, was gerade frisch auf dem Markt ist - es gibt immer etwas Neues zu entdecken.",
+                            "The menu changes with what's fresh at the market - there's always something new to discover.",
+                            "تتغير القائمة حسب ما هو طازج في السوق - هناك دائماً شيء جديد لاكتشافه.")</p>
                     </div>
                 </div>
                 <div class="col-md-3 span1_of_4">
                     <div class="span4_of_list">
                         <span><i class="fa fa-glass"></i></span>
-                        <h3>Kleine Weingüter</h3>
-                        <p>Unsere Weinkarte setzt auf kleine, familiengeführte italienische Weingüter statt große Handelsmarken.</p>
+                        <h3>@P("Kleine Weingüter", "Small Wine Estates", "مزارع نبيذ صغيرة")</h3>
+                        <p>@P("Unsere Weinkarte setzt auf kleine, familiengeführte italienische Weingüter statt große Handelsmarken.",
+                            "Our wine list favors small, family-run Italian estates over big commercial brands.",
+                            "تعتمد قائمة النبيذ لدينا على مزارع إيطالية عائلية صغيرة بدلاً من العلامات التجارية الكبرى.")</p>
                     </div>
                 </div>
                 <div class="clearfix"></div>
@@ -63,9 +74,7 @@
             <h4>@Dict("Home.SpecialsHeading")</h4>
             <p>@Dict("Home.SpecialsIntro")</p>
         </div>
-        <!-- dir="ltr": the cards injected here by specials.js come from the REST API's
-             seeded dish content (German-only, see README), not translated chrome -->
-        <div id="specials-list" class="span_of_4" dir="ltr"></div>
+        <div id="specials-list" class="span_of_4"></div>
         <div class="specials-loadmore">
             <button id="specials-load-more" class="btn" data-take="3">@Dict("Btn.LoadMore")</button>
             <p id="specials-empty" class="specials-empty" style="display:none;">@Dict("Home.SpecialsEmpty")</p>
@@ -73,65 +82,71 @@
     </div>
 </div>
 
-<div class="main1_bg" dir="ltr">
+<div class="main1_bg">
     <div class="container">
         <div class="main slider_text texxt-center">
-            <h4>Warum Bella Vista</h4>
-            <p>Eine familiengeführte Küche, die seit 2014 die gleichen Rezepte kocht.</p>
+            <h4>@P("Warum Bella Vista", "Why Bella Vista", "لماذا بيلا فيستا")</h4>
+            <p>@P("Eine familiengeführte Küche, die seit 2014 die gleichen Rezepte kocht.",
+                "A family-run kitchen that has cooked the same recipes since 2014.",
+                "مطبخ عائلي يطهو بنفس الوصفات منذ عام 2014.")</p>
         </div>
     </div>
 </div>
-<div class="main_btm" dir="ltr">
+<div class="main_btm">
     <div class="container">
         <div class="main span_of_3">
             <div class="col-md-3 span1_of_3">
-                <h4>Warum uns wählen?</h4>
+                <h4>@P("Warum uns wählen?", "Why Choose Us?", "لماذا تختارنا؟")</h4>
                 <ul class="list-unstyled nav_list">
-                    <li><a href="/menu">Frische Pasta, jeden Morgen im Haus gemacht</a></li>
-                    <li><a href="/menu">Holzofen, importiert aus Neapel</a></li>
-                    <li><a href="/menu">Saisonale Karte, passend zum Markt</a></li>
-                    <li><a href="/menu">Weinkarte mit kleinen Weingütern</a></li>
-                    <li><a href="/gallery">Ein Gastraum und eine Terrasse, die dazu passen</a></li>
+                    <li><a href="/menu">@P("Frische Pasta, jeden Morgen im Haus gemacht", "Fresh pasta, made in-house every morning", "معكرونة طازجة تُحضَّر يومياً في المطبخ")</a></li>
+                    <li><a href="/menu">@P("Holzofen, importiert aus Neapel", "Wood-fired oven, imported from Naples", "فرن خشبي مستورد من نابولي")</a></li>
+                    <li><a href="/menu">@P("Saisonale Karte, passend zum Markt", "Seasonal menu, matched to the market", "قائمة موسمية تتماشى مع السوق")</a></li>
+                    <li><a href="/menu">@P("Weinkarte mit kleinen Weingütern", "Wine list from small estates", "قائمة نبيذ من مزارع صغيرة")</a></li>
+                    <li><a href="/gallery">@P("Ein Gastraum und eine Terrasse, die dazu passen", "A dining room and terrace to match", "قاعة طعام وتراس يليقان بذلك")</a></li>
                 </ul>
             </div>
             <div class="col-md-6 span1_of_3">
-                <h5>Bella Vista wird seit 2014 von der Familie Moretti geführt. <span>Die Küche folgt noch immer den Rezepten von Nonna Moretti</span>, und die Pasta wird jeden einzelnen Morgen frisch gerollt.</h5>
+                <h5>@P("Bella Vista wird seit 2014 von der Familie Moretti geführt. Die Küche folgt noch immer den Rezepten von Nonna Moretti, und die Pasta wird jeden einzelnen Morgen frisch gerollt.",
+                    "Bella Vista has been run by the Moretti family since 2014. The kitchen still follows Nonna Moretti's recipes, and the pasta is rolled fresh every single morning.",
+                    "تديره عائلة موريتي منذ عام 2014. لا يزال المطبخ يتبع وصفات الجدة موريتي، وتُحضَّر المعكرونة طازجة كل صباح.")</h5>
             </div>
             <div class="col-md-3 span1_of_3">
-                <h4>Was Gäste sagen</h4>
+                <h4>@P("Was Gäste sagen", "What Guests Say", "ماذا يقول ضيوفنا")</h4>
                 <div class="clients">
-                    <p>"Die beste Tagliatelle al Tartufo, die ich außerhalb Italiens gegessen habe. Wir kommen jeden Monat wieder." - ein Stammgast</p>
+                    <p>@P("\"Die beste Tagliatelle al Tartufo, die ich außerhalb Italiens gegessen habe. Wir kommen jeden Monat wieder.\" - ein Stammgast",
+                        "\"The best tagliatelle al tartufo I've had outside Italy. We come back every month.\" - a regular guest",
+                        "\"أفضل تالياتيلي بالكمأة تذوقتها خارج إيطاليا. نعود كل شهر.\" - ضيف دائم")</p>
                 </div>
             </div>
             <div class="clearfix"></div>
         </div>
         <div class="cau_hide">
             <div class="cursual">
-                <h4>Was unsere Gäste sagen<span class="line"></span></h4>
+                <h4>@P("Was unsere Gäste sagen", "What Our Guests Say", "ماذا يقول ضيوفنا")<span class="line"></span></h4>
             </div>
             <div id="owl-demo" class="owl-carousel">
                 <div class="item">
                     <div class="cau_left">
-                        <img class="lazyOwl" data-src="/images/placeholders/avatar-1.svg" alt="Gast">
-                        <p>"Die beste Holzofenpizza der Stadt." - Anna</p>
+                        <img class="lazyOwl" data-src="/images/placeholders/avatar-1.jpg" alt="Gast">
+                        <p>@P("\"Die beste Holzofenpizza der Stadt.\" - Anna", "\"The best wood-fired pizza in town.\" - Anna", "\"أفضل بيتزا بالفرن الحطبي في المدينة.\" - آنا")</p>
                     </div>
                 </div>
                 <div class="item">
                     <div class="cau_left">
-                        <img class="lazyOwl" data-src="/images/placeholders/avatar-2.svg" alt="Gast">
-                        <p>"Gemütliche Terrasse, wunderbares Tiramisù." - Jonas</p>
+                        <img class="lazyOwl" data-src="/images/placeholders/avatar-2.jpg" alt="Gast">
+                        <p>@P("\"Gemütliche Terrasse, wunderbares Tiramisù.\" - Jonas", "\"Cozy terrace, wonderful tiramisu.\" - Jonas", "\"تراس مريح وتيراميسو رائع.\" - يوناس")</p>
                     </div>
                 </div>
                 <div class="item">
                     <div class="cau_left">
-                        <img class="lazyOwl" data-src="/images/placeholders/avatar-3.svg" alt="Gast">
-                        <p>"Unser Stammlokal für jeden Jahrestag." - Sara &amp; Tom</p>
+                        <img class="lazyOwl" data-src="/images/placeholders/avatar-3.jpg" alt="Gast">
+                        <p>@P("\"Unser Stammlokal für jeden Jahrestag.\" - Sara &amp; Tom", "\"Our go-to place for every anniversary.\" - Sara &amp; Tom", "\"مكاننا المفضل لكل ذكرى سنوية.\" - سارة وتوم")</p>
                     </div>
                 </div>
                 <div class="item">
                     <div class="cau_left">
-                        <img class="lazyOwl" data-src="/images/placeholders/avatar-4.svg" alt="Gast">
-                        <p>"Frisch, saisonal, und das Personal kennt deinen Namen." - Karim</p>
+                        <img class="lazyOwl" data-src="/images/placeholders/avatar-4.jpg" alt="Gast">
+                        <p>@P("\"Frisch, saisonal, und das Personal kennt deinen Namen.\" - Karim", "\"Fresh, seasonal, and the staff know your name.\" - Karim", "\"طازج وموسمي، والموظفون يعرفون اسمك.\" - كريم")</p>
                     </div>
                 </div>
             </div>

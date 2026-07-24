@@ -11,10 +11,13 @@
     string lang = LanguageHelper.ResolveLangCode(Context);
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
+    string caption = LanguageHelper.Pick(lang, content.Value<string>("caption"), content.Value<string>("captionEn"), content.Value<string>("captionAr"));
 
     // The stored category value ("Starter"/"Main"/...) also drives the mixitup filter
-    // (data-cat/class below), so it stays as-is for that; the VISIBLE label reuses the
-    // same Dictionary Items as the Gallery filter buttons, so it's translated too.
+    // (bare category class name below, matching the theme's own portfolio.html markup
+    // exactly - a "gallery-" prefixed class here previously broke the filter buttons
+    // since mixitup matches on the plain class name, not data-cat); the VISIBLE label
+    // reuses the same Dictionary Items as the Gallery filter buttons, so it's translated too.
     string categoryLabel = categorySlug switch
     {
         "starter" => Dict("Gallery.FilterStarters"),
@@ -24,13 +27,13 @@
         _ => category,
     };
 }
-<div class="portfolio gallery-@categorySlug" data-cat="@categorySlug">
+<div class="portfolio @categorySlug" data-cat="@categorySlug">
     <div class="portfolio-wrapper">
         @if (image != null)
         {
             <div class="fancyDemo">
-                <a rel="group" title="@(content.Value<string>("caption"))" href="@image.Content.Url()">
-                    <img src="@image.Content.Url()" alt="@(content.Value<string>("caption"))" class="img-responsive" />
+                <a rel="group" title="@caption" href="@image.Content.Url()">
+                    <img src="@image.Content.Url()" alt="@caption" class="img-responsive" />
                 </a>
             </div>
         }

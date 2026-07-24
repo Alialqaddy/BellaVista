@@ -8,6 +8,7 @@
     var culture = LanguageHelper.ToCultureInfo(lang);
     string Dict(string key) => Umbraco.GetDictionaryValue(key, culture);
     var thumb = Model.Value<MediaWithCrops>("thumbnail");
+    string bodyText = LanguageHelper.Pick(lang, Model.Value<string>("bodyText"), Model.Value<string>("bodyTextEn"), Model.Value<string>("bodyTextAr"));
 }
 <div class="main_bg">
     <div class="container">
@@ -25,15 +26,13 @@
 <div class="main_btm1">
     <div class="container">
         <div class="details">
-            <div dir="ltr">
-                <h2>@Model.Name</h2>
-                <span class="news-date">@Model.CreateDate.ToString("d MMMM yyyy")</span>
-                @if (thumb != null)
-                {
-                    <img src="@thumb.Content.Url()" alt="" class="img-responsive" />
-                }
-                @Html.Raw(Model.Value<string>("bodyText"))
-            </div>
+            <h2 dir="ltr">@Model.Name</h2>
+            <span class="news-date">@Model.CreateDate.ToString("d MMMM yyyy")</span>
+            @if (thumb != null)
+            {
+                <img src="@thumb.Content.Url()" alt="" class="img-responsive" />
+            }
+            @Html.Raw(bodyText)
             <a href="@Model.Parent!.Url()" class="btn">@Dict("Btn.BackToNews")</a>
         </div>
     </div>
