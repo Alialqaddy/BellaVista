@@ -132,12 +132,17 @@ was a deliberate, pragmatic call by the team, not something taught in the course
   may still look better suited to LTR.
 - **Images are stock placeholders, not real photos**: the Modus-Versus theme's own photos
   (`s1.jpg`-`s8.jpg`, `blog*.jpg`, `det_pic.jpg`, testimonial logos, etc.) were unrelated to a
-  restaurant, so every image in `wwwroot/images/placeholders/` was replaced with real photos
-  pulled from **[LoremFlickr](https://loremflickr.com/)** (`loremflickr.com/{w}/{h}/{keywords}`,
-  redirects to a matching real Flickr photo) - chosen because it's free, needs no API key or
-  attribution, and is explicitly built for placeholder use in projects like this one. These are
-  **stand-in photos for a fictional restaurant**, not real photos of a real place, and are used
-  here purely for a student course project.
+  restaurant, so every image in `wwwroot/images/placeholders/` was replaced with a real,
+  category-appropriate photo (pasta for a pasta dish, a wine glass for the drinks section,
+  etc.), originally sourced one-time from **[LoremFlickr](https://loremflickr.com/)** (free, no
+  API key or attribution required, explicitly built for placeholder use) and then **downloaded
+  and committed to the repo as regular `.jpg` files** - the app never contacts LoremFlickr, or
+  any external service, at build or run time. `Composing/MediaSeeder.cs` only ever does a local
+  `File.OpenRead` from `wwwroot/images/`; there is no `HttpClient`/`WebClient` call anywhere in
+  the seeding path. This means the site builds, seeds, and serves every image correctly with no
+  internet connection at all - important for a graded submission that may be opened offline or
+  on an unreliable network. These remain **stand-in photos for a fictional restaurant**, not
+  real photos of a real place, used here purely for a student course project.
 - **Reservation form / event-handling** just logs (`ILogger`) instead of sending real email -
   no SMTP/email service is configured for this course project.
 - **No named image crops**: images are served through Umbraco's default ImageSharp pipeline
